@@ -71,6 +71,7 @@ sudoku9(Puzzle, Solution) :-
   valid(Col8),
   valid(Col9),
 
+
   valid(Block1),
   valid(Block2),
   valid(Block3),
@@ -79,16 +80,31 @@ sudoku9(Puzzle, Solution) :-
   valid(Block6),
   valid(Block7),
   valid(Block8),
-  valid(Block9).
+  valid(Block9),
+
+  printSudoku(Puzzle).
+
+printSudoku([]).
+printSudoku([Row | Rows]) :-
+  print(Row),
+  nl(),
+  printSudoku(Rows).
 
 valid(X) :-
-  length(X, 9),
-  member(1, X),
-  member(2, X),
-  member(3, X),
-  member(4, X),
-  member(5, X),
-  member(6, X),
-  member(7, X),
-  member(8, X),
-  member(9, X).
+  all_unique(X).
+  % length(X, 9),
+  % member(1, X),
+  % member(2, X),
+  % member(3, X),
+  % member(4, X),
+  % member(5, X),
+  % member(6, X),
+  % member(7, X),
+  % member(8, X),
+  % member(9, X).
+
+
+all_unique([]).
+all_unique([H|T]) :- all_unique(T),
+                     member(H, [1, 2, 3, 4, 5, 6, 7, 8, 9]),
+                     not(member(H, T)).
