@@ -1,11 +1,40 @@
 :- consult('route.pl').
 
-edge(From, To, Cost) :-
+path(X, Y, Path) :-
+  path1(X, Y, [], Path).
+
+
+path1(From, To, Visited, Path) :-
+  travel(From, X, Cost),
+  not(member(travel(_, X, _), Visited)),
+
+  NewVisited = [travel(From, X, Cost) | Visited],
+  (
+    (X = To, reverse(NewVisited, Path) ) ;
+    ( X \= To, path1(X, To, NewVisited, Path))
+  ).
+
+
+cost([], 0).
+cost([H | T], Cost) :-
+  H = travel(_, _, Cost1),
+  cost(T, Cost2),
+  Cost is Cost1 + Cost2.
+
+shortestPath(X, Y, SPath) :-
+  findall( (Cost, Path), (path(X,Y,Path), cost(Path, Cost)), Paths),
+  sort(Paths, SortedPaths),
+  SortedPaths = [(_, SPath)|_].
+
+
+
+% An travel exists if there is a route in which it can be found.
+travel(From, To, Cost) :-
   route(Route),
-  findEdge(From, To, Cost, Route).
+  findtravel(From, To, Cost, Route).
 
 
-findEdge(From at Time1, To at Time2, Cost, Route) :-
+findtravel(From at Time1, To at Time2, Cost, Route) :-
   Route = [F, S | T],
   (
   (
@@ -13,14 +42,8 @@ findEdge(From at Time1, To at Time2, Cost, Route) :-
   S = To at Time2,
   diffTime(Time2, Time1, Cost)
   );
-  findEdge(From at Time1, To at Time2, Cost, [S|T])
+  findtravel(From at Time1, To at Time2, Cost, [S|T])
   ).
 
 
-
-
-
-
-
-
-diffTime(H2:M2, H1:M1, Minutes) :- Minutes is (H2*60 + M2) - (H1* 60 + M1).
+diffTime(H1:M1, H0:M0, Minutes) :- Minutes is (H1*60 + M1) - (H0* 60 + M0).
