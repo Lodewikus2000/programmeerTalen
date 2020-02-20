@@ -4,45 +4,73 @@ path(X, Y, Path) :-
   path1(X, Y, [], Path).
 
 
-path1(From at Time1, To, Visited, Path) :-
+path1(From at Dep, To at Arr, Visited, Path) :-
   (
     (
-      edge(From at Time1, X, Cost),
+      edge(From at Dep, X at Arr1, Cost),
       % write((From at Time1, X, Cost)),
       % nl,
-      not(member(travel(_, X, _), Visited)),
-      NewVisited = [travel(From at Time1, X, Cost) | Visited]
+      not(member(travel(_, X at _, _), Visited)),
+      NewVisited = [arrives(X at Arr1), travel(From, X, Cost), departs(From at Dep) | Visited]
     )
     ;
     (
-      edge(From at Time2, X, Cost),
+      edge(From at Dep2, X at Arr1, Cost),
       % write((From at Time2, X, Cost)),
       % nl,
-      before(Time1, Time2),
-      diffTime(Time2, Time1, WaitTime),
+      before(Dep, Dep2),
+      diffTime(Dep2, Dep, WaitTime),
 
-      NewVisited = [travel(From at Time2, X, Cost), wait(From, WaitTime) | Visited]
+      NewVisited = [arrives(X at Arr1), travel(From, X, Cost), departs(From at Dep2), wait(From, WaitTime) | Visited]
     )
   ),
   (
     (
-      X = To,
+      X at Arr1 = To at Arr,
+      % write(X at Arr1),
+      % write(" =? "),
+      % write(To at Arr),
+      % nl,
       reverse(NewVisited, Path)
+      % write(Path),
+      % nl,
+      % write("we arrived"),
+      % nl,
+      % nl
+
     ) ;
     (
-      X \= To,
-      path1(X, To, NewVisited, Path)
+      X at Arr1 \= To at Arr,
+      % reverse(NewVisited, Reversed),
+      % write(Reversed),
+      % nl,
+      % write("not there yet"),
+      % nl,
+      % nl,
+      path1(X at Arr1, To at Arr, NewVisited, Path)
     )
   ).
 
 
 
 
-cost([], 0).
-cost([H | T], Cost) :-
-  (H = travel(_, _, Cost1) ; H = wait(_ , Cost1)),
-  cost(T, Cost2),
-  Cost is Cost1 + Cost2.
+% cost([], 0).
+% cost([H | T], Cost) :-
+%   (
+%   H = travel(_, _, Cost1);
+%   H = wait(_ , Cost1);
+%   H=
+%   ),
+%   cost(T, Cost2),
+%   Cost is Cost1 + Cost2.
+
+cost(Path, Cost) :-
+  Path = [H1 | _],
+  last(Path, H2),
+  (H1 = departs(_ at T1) ; H1 = arrives(_ at T1) ),
+  (H2 = departs(_ at T2) ; H2 = arrives(_ at T2) ),
+  diffTime(T2, T1, Cost).
+
 
 shortestPath(X, Y, SPath) :-
   findall( (Cost, Path), (path(X, Y, Path), cost(Path, Cost)), Paths),
@@ -52,20 +80,20 @@ shortestPath(X, Y, SPath) :-
 
 
 % An edge exists if there is a route in which it can be found.
-edge(From, To, Cost) :-
+edge(From at Dep, To at Arr, Cost) :-
   route(Route),
-  findedge(From, To, Cost, Route).
+  findedge(From at Dep, To at Arr, Cost, Route).
 
 
-findedge(From at Time1, To at Time2, Cost, Route) :-
+findedge(From at Dep, To at Arr, Cost, Route) :-
   Route = [F, S | T],
   (
   (
-  F = From at Time1,
-  S = To at Time2,
-  diffTime(Time2, Time1, Cost)
+  F = From at _ >< Dep,
+  S = To at Arr >< _,
+  diffTime(Arr, Dep, Cost)
   );
-  findedge(From at Time1, To at Time2, Cost, [S|T])
+  findedge(From at Dep, To at Arr, Cost, [S|T])
   ).
 
 
