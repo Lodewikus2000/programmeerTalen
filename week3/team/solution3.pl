@@ -5,7 +5,7 @@ path(X, Y, Path) :-
 
 
 path1(From, To, Visited, Path) :-
-  travel(From, X, Cost),
+  edge(From, X, Cost),
   not(member(travel(_, X, _), Visited)),
 
   NewVisited = [travel(From, X, Cost) | Visited],
@@ -28,13 +28,13 @@ shortestPath(X, Y, SPath) :-
 
 
 
-% An travel exists if there is a route in which it can be found.
-travel(From, To, Cost) :-
+% An edge exists if there is a route in which it can be found.
+edge(From, To, Cost) :-
   route(Route),
-  findtravel(From, To, Cost, Route).
+  findedge(From, To, Cost, Route).
 
 
-findtravel(From at Time1, To at Time2, Cost, Route) :-
+findedge(From at Time1, To at Time2, Cost, Route) :-
   Route = [F, S | T],
   (
   (
@@ -42,7 +42,7 @@ findtravel(From at Time1, To at Time2, Cost, Route) :-
   S = To at Time2,
   diffTime(Time2, Time1, Cost)
   );
-  findtravel(From at Time1, To at Time2, Cost, [S|T])
+  findedge(From at Time1, To at Time2, Cost, [S|T])
   ).
 
 

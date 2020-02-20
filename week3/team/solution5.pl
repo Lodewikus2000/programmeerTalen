@@ -1,4 +1,4 @@
-:- consult('route.pl').
+:- consult('route5.pl').
 
 path(X, Y, Path) :-
   path1(X, Y, [], Path).
@@ -7,7 +7,7 @@ path(X, Y, Path) :-
 path1(From at Time1, To, Visited, Path) :-
   (
     (
-      travel(From at Time1, X, Cost),
+      edge(From at Time1, X, Cost),
       % write((From at Time1, X, Cost)),
       % nl,
       not(member(travel(_, X, _), Visited)),
@@ -15,7 +15,7 @@ path1(From at Time1, To, Visited, Path) :-
     )
     ;
     (
-      travel(From at Time2, X, Cost),
+      edge(From at Time2, X, Cost),
       % write((From at Time2, X, Cost)),
       % nl,
       before(Time1, Time2),
@@ -51,13 +51,13 @@ shortestPath(X, Y, SPath) :-
 
 
 
-% An travel exists if there is a route in which it can be found.
-travel(From, To, Cost) :-
+% An edge exists if there is a route in which it can be found.
+edge(From, To, Cost) :-
   route(Route),
-  findtravel(From, To, Cost, Route).
+  findedge(From, To, Cost, Route).
 
 
-findtravel(From at Time1, To at Time2, Cost, Route) :-
+findedge(From at Time1, To at Time2, Cost, Route) :-
   Route = [F, S | T],
   (
   (
@@ -65,7 +65,7 @@ findtravel(From at Time1, To at Time2, Cost, Route) :-
   S = To at Time2,
   diffTime(Time2, Time1, Cost)
   );
-  findtravel(From at Time1, To at Time2, Cost, [S|T])
+  findedge(From at Time1, To at Time2, Cost, [S|T])
   ).
 
 
