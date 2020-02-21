@@ -24,7 +24,14 @@ cost([H | T], Cost) :-
 shortestPath(X, Y, SPath) :-
   findall( (Cost, Path), (path(X,Y,Path), cost(Path, Cost)), Paths),
   sort(Paths, SortedPaths),
-  SortedPaths = [(_, SPath)|_].
+  SortedPaths = [(_, SPath)|_],
+
+  X = From at Dep,
+  Y = To at Arr,
+
+  SPath = [ travel(From at Dep, _ at _ , _)|_],
+  reverse(SPath, ReverseSPath),
+  ReverseSPath = [ travel(_ at _, To at Arr, _)|_].
 
 
 
@@ -45,5 +52,16 @@ findedge(From at Time1, To at Time2, Cost, Route) :-
   findedge(From at Time1, To at Time2, Cost, [S|T])
   ).
 
+diffTime(H1:M1, H0:M0, Minutes) :-
+  \+ var(H1),
+  \+ var(H0),
 
-diffTime(H1:M1, H0:M0, Minutes) :- Minutes is (H1*60 + M1) - (H0* 60 + M0).
+  Minutes is (H1*60 + M1) - (H0* 60 + M0).
+
+diffTime(H1:_, H2:_, Minutes) :-
+  (
+  var(H1);
+  var(H2)
+  ),
+  Minutes is 0.
+% diffTime(H1:M1, H0:M0, Minutes) :- Minutes is (H1*60 + M1) - (H0* 60 + M0).

@@ -4,22 +4,28 @@ path(X, Y, Path) :-
   path1(X, Y, [], Path).
 
 
+
+
 path1(From at Dep, To at Arr, Visited, Path) :-
   (
     (
       edge(From at Dep, X at Arr1, Cost),
-      % write((From at Time1, X, Cost)),
-      % nl,
+
       not(member(travel(_, X at _, _), Visited)),
       NewVisited = [arrives(X at Arr1), travel(From, X, Cost), departs(From at Dep) | Visited]
     )
     ;
     (
       edge(From at Dep2, X at Arr1, Cost),
-      % write((From at Time2, X, Cost)),
+      % write(From at Dep2),
       % nl,
-      before(Dep, Dep2),
+      % write(X at Arr1),
+      % nl,
+      % write(Cost),
+      % nl,
       diffTime(Dep2, Dep, WaitTime),
+      before(Dep, Dep2),
+
 
       NewVisited = [arrives(X at Arr1), travel(From, X, Cost), departs(From at Dep2), wait(From, WaitTime) | Visited]
     )
@@ -49,7 +55,10 @@ path1(From at Dep, To at Arr, Visited, Path) :-
       % nl,
       path1(X at Arr1, To at Arr, NewVisited, Path)
     )
-  ).
+  )
+  ,
+  before(Dep, Arr).
+
 
 
 
@@ -75,7 +84,12 @@ cost(Path, Cost) :-
 shortestPath(X, Y, SPath) :-
   findall( (Cost, Path), (path(X, Y, Path), cost(Path, Cost)), Paths),
   sort(Paths, SortedPaths),
-  SortedPaths = [(_, SPath)|_].
+  SortedPaths = [(_, SPath)|_],
+  X = From at Dep,
+  Y = To at Arr,
+  SPath = [ departs(From at Dep)|_],
+  reverse(SPath, ReverseSPath),
+  ReverseSPath = [ arrives(To at Arr)|_].
 
 
 
@@ -97,7 +111,18 @@ findedge(From at Dep, To at Arr, Cost, Route) :-
   ).
 
 
-diffTime(H1:M1, H0:M0, Minutes) :- Minutes is (H1*60 + M1) - (H0* 60 + M0).
+diffTime(H1:M1, H0:M0, Minutes) :-
+  \+ var(H1),
+  \+ var(H0),
+
+  Minutes is (H1*60 + M1) - (H0* 60 + M0).
+
+diffTime(H1:_, H2:_, Minutes) :-
+  (
+  var(H1);
+  var(H2)
+  ),
+  Minutes is 0.
 
 before(Time1, Time2) :-
   diffTime(Time2, Time1, Difference),
