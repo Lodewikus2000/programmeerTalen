@@ -1,0 +1,59 @@
+##############################
+Hill Climber:
+##############################
+
+##############################
+./team/hc_experiments.sh
+##############################
+
+run het gegeven Knapsack algoritme met de gegeven parameters in een for loop.
+Deze for loop zouden we kunnen threaden voor een versnelling.
+Echter is de huidige oplossing niet extreem langzaam.
+
+##############################
+./team/hc_statistics.sh;
+##############################
+
+Voor de statistics pakken we, wederom in een for loop, de resultaten uit
+de .dat files. hier knippen we de kolommen die we nodig hebben met het commando cut.
+Vervolgens gebruiken we awk om iteratief de rijen die we nodig hebben te printen.
+
+Vervolgens zoeken we de laatste waarde in het bestand met behulp van tail
+Daarna schrijven we de gecleanende output naar een nieuw bestand.
+
+Tenslotte berekenen we met awk het gemiddelde en de standaard deviatie van elk
+bestand. Nadat we dit met AWK geschreven hadden vonden we uit dat hier een oplossing voor
+gegeven is in het voorbeeld.
+
+##############################
+./team/hc_plots.sh;
+##############################
+
+HC plots is geschreven met behulp van GNU plot en aan de hand van het voorbeeld.
+Deze output een gecleanende plot voor data
+
+##############################
+Simulated Annealing:
+##############################
+
+sa werkt volkomen hetzelfde als hc, op een paar verschillen na. Deze
+worden hieronder uitgelicht.
+
+##############################
+./team/sa_experiments.sh;
+##############################
+
+De experimenten worden met de temperatuur parameter gerund ipv met de unpack parameter.
+We hebben value to unpack 3 gekozen, omdat deze het beste presteerde in onze grafieken.
+
+##############################
+./team/sa_statistics.sh;
+##############################
+De data van sumilated annealing is anders geordend en sommige lines hebben geen iteratie waarden.
+Daarom hebben we deze uit de data verwijderd. We geven dus alleen data weer als deze
+een verbetering is van een eerdere iteratie.
+
+##############################
+./team/sa_plots.sh;
+##############################
+-
