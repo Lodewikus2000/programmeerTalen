@@ -31,9 +31,6 @@ path1(From at Time1, To, Visited, Path) :-
         )
     ).
 
-
-
-
 cost([], 0).
 cost([H | T], Cost) :-
     (H = travel(_, _, Cost1) ; H = wait(_ , Cost1)),
