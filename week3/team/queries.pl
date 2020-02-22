@@ -1,8 +1,7 @@
-% Pim van Helvoirt, STUDENT ID
+% Pim van Helvoirt, 10546413
 % Leo Schreuders, 5742978
 % Programmeertalen
 % februari 2020
-
 
 % Welke paden zijn er van 1 naar 3, van 3 naar 5 en van 5 naar 4?
 :- [solution1],
@@ -77,7 +76,7 @@
   nl.
 
 
-  % Hoeveel minuten kost het om van Amsterdam Amstel naar Sittard te reizen?
+% Hoeveel minuten kost het om van Amsterdam Amstel naar Sittard te reizen?
 :-
   [solution3],
   write("Aantal minuten tussen Amsterdam Amstel en Sittard:"),
