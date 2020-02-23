@@ -3,9 +3,6 @@
 path(X, Y, Path) :-
     path1(X, Y, [], Path).
 
-
-
-
 path1(From at Dep, To at Arr, Visited, Path) :-
     (
         (
@@ -37,6 +34,8 @@ path1(From at Dep, To at Arr, Visited, Path) :-
     ) ,
     before(Dep, Arr).
 
+% The cost of a path is the difference in time between the
+% departure time and destination.
 cost(Path, Cost) :-
     Path = [H1 | _],
     last(Path, H2),
@@ -44,7 +43,8 @@ cost(Path, Cost) :-
     (H2 = departs(_ at T2) ; H2 = arrives(_ at T2) ),
     diffTime(T2, T1, Cost).
 
-
+% To find the shortest path we sort the paths on Cost,
+% and then pick the best one.
 shortestPath(X, Y, SPath) :-
     findall( (Cost, Path), (path(X, Y, Path), cost(Path, Cost)), Paths),
     sort(Paths, SortedPaths),
@@ -55,14 +55,12 @@ shortestPath(X, Y, SPath) :-
     reverse(SPath, ReverseSPath),
     ReverseSPath = [ arrives(To at Arr)|_].
 
-
-
 % An edge exists if there is a route in which it can be found.
 edge(From at Dep, To at Arr, Cost) :-
     route(Route),
     findedge(From at Dep, To at Arr, Cost, Route).
 
-
+% Find a edge in the route again.
 findedge(From at Dep, To at Arr, Cost, Route) :-
     Route = [F, S | T],
     (
@@ -75,11 +73,9 @@ findedge(From at Dep, To at Arr, Cost, Route) :-
     findedge(From at Dep, To at Arr, Cost, [S|T])
     ).
 
-
 diffTime(H1:M1, H0:M0, Minutes) :-
     \+ var(H1),
     \+ var(H0),
-
     Minutes is (H1*60 + M1) - (H0* 60 + M0).
 
 diffTime(H1:_, H2:_, Minutes) :-

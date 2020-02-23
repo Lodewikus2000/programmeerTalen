@@ -3,7 +3,8 @@
 path(X, Y, Path) :-
   path1(X, Y, [], Path).
 
-
+% Calcute path based on Solution3, now taking before time and wait time into
+% account.
 path1(From at Time1, To, Visited, Path) :-
     (
         (
@@ -31,6 +32,7 @@ path1(From at Time1, To, Visited, Path) :-
         )
     ).
 
+% Cost, but now add a special wait predicate with a cost too.
 cost([], 0).
 cost([H | T], Cost) :-
     (H = travel(_, _, Cost1) ; H = wait(_ , Cost1)),
@@ -47,7 +49,7 @@ edge(From, To, Cost) :-
     route(Route),
     findedge(From, To, Cost, Route).
 
-
+% Find a edge with a diff Time.
 findedge(From at Time1, To at Time2, Cost, Route) :-
     Route = [F, S | T],
     (
@@ -61,8 +63,10 @@ findedge(From at Time1, To at Time2, Cost, Route) :-
     ).
 
 
-diffTime(H1:M1, H0:M0, Minutes) :- Minutes is (H1*60 + M1) - (H0* 60 + M0).
+diffTime(H1:M1, H0:M0, Minutes) :-
+    Minutes is (H1*60 + M1) - (H0* 60 + M0).
 
+% 
 before(Time1, Time2) :-
     diffTime(Time2, Time1, Difference),
     Difference > 0.

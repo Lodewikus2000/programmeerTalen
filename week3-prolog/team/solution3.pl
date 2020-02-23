@@ -1,5 +1,12 @@
+% Pim van Helvoirt, 10546413
+% Leo Schreuders, 5742978
+% Programmeertalen
+% Februari 2020
+% Solution3, calculates the shortest Path from a route.
+
 :- consult('route.pl').
 
+% Redefine the path rule from solution 1, to unpack travel predicate.
 path(X, Y, Path) :-
     path1(X, Y, [], Path).
 
@@ -14,13 +21,15 @@ path1(From, To, Visited, Path) :-
         ( X \= To, path1(X, To, NewVisited, Path))
     ).
 
-
+% Based on same principle as cost in Solution 2, calculates cost
+% of a path.
 cost([], 0).
 cost([H | T], Cost) :-
     H = travel(_, _, Cost1),
     cost(T, Cost2),
     Cost is Cost1 + Cost2.
 
+% Finds the shortest Path between to places.
 shortestPath(X, Y, SPath) :-
     findall( (Cost, Path), (path(X,Y,Path), cost(Path, Cost)), Paths),
     sort(Paths, SortedPaths),
@@ -42,25 +51,29 @@ edge(From, To, Cost) :-
 
 
 findedge(From at Time1, To at Time2, Cost, Route) :-
-  Route = [F, S | T],
-  (
+    Route = [F, S | T],
+    (
       (
       F = From at Time1,
       S = To at Time2,
       diffTime(Time2, Time1, Cost)
       );
       findedge(From at Time1, To at Time2, Cost, [S|T])
-  ).
+    ).
 
+% Calculates the difference in time in minutes between to Time objects.
 diffTime(H1:M1, H0:M0, Minutes) :-
-  \+ var(H1),
-  \+ var(H0),
+    % ensure that both are not free variables.
+    \+ var(H1),
+    \+ var(H0),
 
   Minutes is (H1*60 + M1) - (H0* 60 + M0).
 
 diffTime(H1:_, H2:_, Minutes) :-
-  (
-  var(H1);
-  var(H2)
-  ),
-  Minutes is 0.
+      (
+      % if either is a free variable difference in time is not a thing,
+      % and should be zero.
+      var(H1);
+      var(H2)
+      ),
+      Minutes is 0.

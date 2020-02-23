@@ -1,9 +1,10 @@
 % Pim van Helvoirt, 10546413
 % Leo Schreuders, 5742978
 % Programmeertalen
-% februari 2020
+% Februari 2020
+% Queries voor report.pdf
 
-:- use_module(library(occurs)).
+:- use_module(library(occurs)). % to prettify a query only.
 
 :- set_prolog_flag(answer_write_options,
                    [ quoted(true), portray(true), spacing(next_argument)]).
