@@ -121,16 +121,34 @@ test3 :- consult('solution3.pl'),
 
 test4 :- consult('solution4.pl'),
     [solution4],
+    write("Dit is het reisplan van Amsterdam Science Park naar \c
+          's-Hertogenbosch:"),
     shortestPath("Amsterdam Science Park" at _,
                  "'s-Hertogenbosch" at _, S),
-    write(S).
+    nl,
+    write(S),
+    nl,
+    nl,
+    write("Duur in minuten:"),
+    nl,
+    cost(S, Cost),
+    write(Cost),
+    nl,
+    write("Aantal keer overstappen:"),
+    nl,
+    occurrences_of_term(wait(_,_), S, Overstappen),
+    write(Overstappen),
+    nl,
+    nl.
+
+
 
 test5 :- consult('solution5.pl'),
     consult('route5.pl'),
     Begin = 11:16,
     shortestPath("Schiphol Airport" at Begin, "Nijmegen" at End, Schedule),
     write(Schedule),
-    occurrences_of_term(travel(_,_,_), Schedule, Overstappen),
+    occurrences_of_term(wait(_,_), Schedule, Overstappen),
     nl,
 
     write("Overstappen: "), write(Overstappen), nl,

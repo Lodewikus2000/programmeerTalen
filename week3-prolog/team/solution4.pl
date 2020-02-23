@@ -64,9 +64,18 @@ findedge(From at Time1, To at Time2, Cost, Route) :-
 
 
 diffTime(H1:M1, H0:M0, Minutes) :-
+    \+ var(H1),
+    \+ var(H0),
     Minutes is (H1*60 + M1) - (H0* 60 + M0).
 
-% 
+diffTime(H1:_, H2:_, Minutes) :-
+    (
+    var(H1);
+    var(H2)
+    ),
+    Minutes is 0.
+
+%
 before(Time1, Time2) :-
     diffTime(Time2, Time1, Difference),
     Difference > 0.

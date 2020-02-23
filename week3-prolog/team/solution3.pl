@@ -31,7 +31,7 @@ cost([H | T], Cost) :-
 
 % Finds the shortest Path between to places.
 shortestPath(X, Y, SPath) :-
-    findall( (Cost, Path), (path(X,Y,Path), cost(Path, Cost)), Paths),
+        findall( (Cost, Path), (path(X,Y,Path), cost(Path, Cost)), Paths),
     sort(Paths, SortedPaths),
     SortedPaths = [(_, SPath)|_],
 
