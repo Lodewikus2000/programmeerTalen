@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import numpy as np
 import sys
 
 NUMBERS = 0
@@ -13,43 +12,46 @@ def main():
     # consult -h for help
     parser = argparse.ArgumentParser()
     parser.add_argument('sudoku_string', action="store",
-                        help='sudoku string to be parsed')
+                        help='sudoku string to be parsed.')
     parser.add_argument('-verbose', action="store_true",
                         help='boolean for verbose output',
                         default=False)
     parser.add_argument('-prettyprint', action="store_true",
-                        help='boolean to pretty print',
+                        help='boolean to pretty print.',
                         default=False)
 
+    # parse arguments
     args = parser.parse_args()
     sudoku, pretty, verbose = args.sudoku_string, args.prettyprint, args.verbose
 
     matrix = parse_sudoku(sudoku)
     solution = solve_sudoku(matrix, verbose)
-
     print_sudoku(matrix, pretty)
 
 def parse_sudoku(file):
     """ parses a sudoku from a file """
+
     if not file:
         raise ValueError(""" The sudoku file is not valid. """)
 
     parsed = []
+
     with open(file) as f:
         for line in f:
             parsed.append([item for item in parse_int(line)])
 
+    size = len(parsed)
+
     try:
         len(parsed) == len(parsed[0])
+
     except e as e:
         raise ValueError('The sudoku should be square.')
 
-    size = len(parsed)
-
     block_per_row = {4 : 2, 9 : 3, 16 : 4}
-
     block_size = block_per_row[size]
 
+    # store static attributes of the sudoku as globals, for more readable code.
     global NUMBERS
     global POSITIONS
     global BLOCKS
@@ -61,19 +63,20 @@ def parse_sudoku(file):
               for j in range(block_size)) for b1 in range(0, size, block_size)
               for b2 in range(0, size, block_size)]
 
-    matrix = np.asarray(parsed)
-
-    return matrix
+    return parsed
 
 def parse_int(inputstring):
     """ returns numbers in a given string as ints """
+
     for i in inputstring:
         if i == '_':
             yield 0
         elif i.isdigit():
             yield int(i)
-        else:
+        elif i.isspace():
             continue
+        else:
+            raise ValueError('The input could not be parsed wrong characters.')
 
 def solve_sudoku(sudoku, verbose):
     """ solve a given sudoku grid, returns a solved grid """
@@ -108,27 +111,31 @@ def fill_guaranteed(sudoku, open_spots, verbose=False):
         # build the set of possible positions
         possible_positions = build_possible_positions(sudoku)
 
+        # walk over the keys in the possible positions dictionary
         for key in sorted(possible_positions,
                           key=lambda k: len(possible_positions[k]),
                           reverse=True):
 
+            # drop filled in positions from the dictionary
+            if len(possible_positions[key]) == 0:
+                possible_positions.pop(key)
+
             # if there is only one possible value, fill it in.
             if len(possible_positions[key]) == 1:
+
+                # flip bool to true to retry filling in a value.
                 filling_guarenteed = True
 
                 val = possible_positions[key].pop()
 
+                # unpack key and fill in value.
+                col, row = key
+                sudoku[col][row] = val
 
                 if verbose:
                     print(f'filled in {key} with {val}.')
 
-                sudoku[key] = val
-
                 break
-
-            # drop empty values from the sudoku
-            if len(possible_positions[key]) == 0:
-                possible_positions.pop(key)
 
     open_spots_current = len(possible_positions.keys())
 
@@ -152,8 +159,8 @@ def build_possible_positions(sudoku):
     possibles = {tuple((col,row)) : {} for col in POSITIONS for row in POSITIONS
                  if sudoku[row][col] == 0}
 
-    for col, item_list in enumerate(sudoku):
-        for row, item in enumerate(item_list):
+    for col, _ in enumerate(sudoku):
+        for row, item in enumerate(_):
             if item == 0:
                 possibles[(col, row)] = possible_per_spot(sudoku, col, row)
 
@@ -161,21 +168,38 @@ def build_possible_positions(sudoku):
 
 def possible_per_spot(m, col, row):
     """ return the possible values for a spot in the sudoku """
+
+    # a value is a possible values, when it is not in the column,
+    # row or block already.
+
+    possible = {i for i in NUMBERS if not i in get_column(m, col)
+                and not i in get_row(m, row)
+                and not i in get_block(m, row, col)}
+
+    return possible
+
+def get_row(m, i):
+    """ get the ith row of the sudoku """
+    return m[i]
+
+def get_column(m, i):
+    """ get the ith column of the sudoku """
+    return [m[j][i] for j in range(len(m))]
+
+def get_block(m, col, row):
+    """ get the block in which the col and row fall. """
     block_i = 0
 
     for block in BLOCKS:
 
-        if tuple((col, row)) in block:
+        if not tuple((col, row)) in block:
+            block_i += 1
+        else:
             break
 
-        block_i += 1
+    block = {m[j][i] for (j, i) in BLOCKS[block_i]}
 
-    # errors here with 16 x 16 
-    block = {m[b] for b in BLOCKS[block_i]}
-    possible = {i for i in NUMBERS if not i in m[col, :]
-                and not i in m[:, row] and not i in block}
-
-    return possible
+    return block
 
 def print_sudoku(sudoku, pretty):
     """ print the sudoku """
@@ -191,9 +215,6 @@ def dirty_print_sudoku(sudoku):
             print(f'{item} ', end='')
         print('')
 
-    # prevent broken pipe errors
-    sys.stderr.close()
-
 def pretty_print_sudoku(sudoku):
     """ print some additional stuff next to only numbers """
     count = 0
@@ -207,9 +228,6 @@ def pretty_print_sudoku(sudoku):
         print('|')
     print('-' * len(sudoku) * 4,'\n')
     print(f'current open spots: {count}')
-
-    # prevent broken pipe errors
-    sys.stderr.close()
 
 if __name__ == "__main__":
     main()
