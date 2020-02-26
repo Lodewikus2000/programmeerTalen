@@ -6,46 +6,24 @@ NUMBERS = 0
 POSITIONS = 0
 BLOCKS = 0
 
-def main():
-
-    # define an argument parser
-    # consult -h for help
-    parser = argparse.ArgumentParser()
-    parser.add_argument('sudoku_string', action="store",
-                        help='sudoku string to be parsed.')
-    parser.add_argument('-verbose', action="store_true",
-                        help='boolean for verbose output',
-                        default=False)
-    parser.add_argument('-prettyprint', action="store_true",
-                        help='boolean to pretty print.',
-                        default=False)
-
-    # parse arguments
-    args = parser.parse_args()
-    sudoku, pretty, verbose = args.sudoku_string, args.prettyprint, args.verbose
-
-    matrix = parse_sudoku(sudoku)
-    solution = solve_sudoku(matrix, verbose)
-    print_sudoku(matrix, pretty)
-
 def parse_sudoku(file):
     """ parses a sudoku from a file """
 
-    if not file:
-        raise ValueError(""" The sudoku file is not valid. """)
-
     parsed = []
 
-    with open(file) as f:
-        for line in f:
-            parsed.append([item for item in parse_int(line)])
-
+    try:
+        with open(file) as f:
+            for line in f:
+                parsed.append([item for item in parse_int(line)])
+    except:
+        raise ValueError(""" The sudoku file is not there, please"""
+                         """ give a file to read from. """)
     size = len(parsed)
 
     try:
         len(parsed) == len(parsed[0])
 
-    except e as e:
+    except:
         raise ValueError('The sudoku should be square.')
 
     block_per_row = {4 : 2, 9 : 3, 16 : 4}
@@ -201,13 +179,6 @@ def get_block(m, col, row):
 
     return block
 
-def print_sudoku(sudoku, pretty):
-    """ print the sudoku """
-    if pretty:
-        pretty_print_sudoku(sudoku)
-    else:
-        dirty_print_sudoku(sudoku)
-
 def dirty_print_sudoku(sudoku):
     """ print only the numbers """
     for item_list in sudoku:
@@ -228,6 +199,32 @@ def pretty_print_sudoku(sudoku):
         print('|')
     print('-' * len(sudoku) * 4,'\n')
     print(f'current open spots: {count}')
+
+def main():
+
+    # define an argument parser
+    # consult -h for help
+    parser = argparse.ArgumentParser()
+    parser.add_argument('sudoku_string', action="store",
+                        help='sudoku string to be parsed.')
+    parser.add_argument('-verbose', action="store_true",
+                        help='boolean for verbose output',
+                        default=False)
+    parser.add_argument('-prettyprint', action="store_true",
+                        help='boolean to pretty print.',
+                        default=False)
+
+    # parse arguments
+    args = parser.parse_args()
+    sudoku, pretty, verbose = args.sudoku_string, args.prettyprint, args.verbose
+
+    sudoku = parse_sudoku(sudoku)
+    sudoku = solve_sudoku(sudoku, verbose)
+
+    if pretty:
+        pretty_print_sudoku(sudoku)
+    else:
+        dirty_print_sudoku(sudoku)
 
 if __name__ == "__main__":
     main()
