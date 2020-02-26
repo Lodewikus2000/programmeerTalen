@@ -56,9 +56,9 @@ def sum_nested_it(mylist):
     """
     Flattens a list of lists or iterables and returns the sum.
     """
-    # Turn the list into a stack.
+    # Turn the list into a stack (because poppping a deque is cheaper).
     stack = collections.deque([mylist])
-    flat_list = collections.deque([])
+    sum = 0
 
     # As long as the stack is not empty, keep taking the top element.
     while stack:
@@ -69,8 +69,8 @@ def sum_nested_it(mylist):
             for x in item:
                 stack.append(x)
 
-        # Otherwise, add to the front of the flattened list.
+        # Otherwise, add to the sum.
         else:
-            flat_list.appendleft(item)
+            sum += item
 
-    return sum(flat_list)
+    return sum
