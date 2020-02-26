@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import math
 import sys
 
 NUMBERS = 0
@@ -26,8 +27,7 @@ def parse_sudoku(file):
     except:
         raise ValueError('The sudoku should be square.')
 
-    block_per_row = {4 : 2, 9 : 3, 16 : 4}
-    block_size = block_per_row[size]
+    block_size = int(math.sqrt(len(parsed)))
 
     # store static attributes of the sudoku as globals, for more readable code.
     global NUMBERS
@@ -36,8 +36,8 @@ def parse_sudoku(file):
 
     # define the possible numbers, the positions and blocks for the sudoku.
     NUMBERS = {i for i in range(1, size + 1)}
-    POSITIONS = {i for i in range(0, size)}
-    BLOCKS = [tuple((i + b1, j + b2) for i in range(block_size)
+    POSITIONS = {i for i in range(1, size)}
+    BLOCKS = [tuple((j + b1, i + b2) for i in range(block_size)
               for j in range(block_size)) for b1 in range(0, size, block_size)
               for b2 in range(0, size, block_size)]
 
@@ -46,13 +46,11 @@ def parse_sudoku(file):
 def parse_int(inputstring):
     """ returns numbers in a given string as ints """
 
-    for i in inputstring:
+    for i in inputstring.split():
         if i == '_':
             yield 0
         elif i.isdigit():
             yield int(i)
-        elif i.isspace():
-            continue
         else:
             raise ValueError('The input could not be parsed wrong characters.')
 
@@ -72,7 +70,7 @@ def solve_sudoku(sudoku, verbose):
                                                              verbose)
 
     if not open_spots_current == 0 and verbose:
-        print('not done yet...')
+        print('not done yet...\n')
 
     return sudoku
 
@@ -99,7 +97,7 @@ def fill_guaranteed(sudoku, open_spots, verbose=False):
                 possible_positions.pop(key)
 
             # if there is only one possible value, fill it in.
-            if len(possible_positions[key]) == 1:
+            elif len(possible_positions[key]) == 1:
 
                 # flip bool to true to retry filling in a value.
                 filling_guarenteed = True
@@ -107,15 +105,20 @@ def fill_guaranteed(sudoku, open_spots, verbose=False):
                 val = possible_positions[key].pop()
 
                 # unpack key and fill in value.
-                col, row = key
-                sudoku[col][row] = val
+                row, col = key
+                sudoku[row][col] = val
 
                 if verbose:
                     print(f'filled in {key} with {val}.')
 
                 break
 
+
+
     open_spots_current = len(possible_positions.keys())
+
+    if verbose:
+        print('\ncurrent open spots:', open_spots_current)
 
     return open_spots_current, possible_positions
 
@@ -134,43 +137,42 @@ def fill_guaranteed(sudoku, open_spots, verbose=False):
 
 def build_possible_positions(sudoku):
     """ build a dict with (col, row): possible values from a given sudoku """
-    possibles = {tuple((col,row)) : {} for col in POSITIONS for row in POSITIONS
-                 if sudoku[row][col] == 0}
+    possibles = {}
 
-    for col, _ in enumerate(sudoku):
-        for row, item in enumerate(_):
+    for row, _ in enumerate(sudoku):
+        for col, item in enumerate(_):
             if item == 0:
-                possibles[(col, row)] = possible_per_spot(sudoku, col, row)
+                possibles[(row, col)] = possible_per_spot(sudoku, row, col)
 
     return possibles
 
-def possible_per_spot(m, col, row):
+def possible_per_spot(su, row, col):
     """ return the possible values for a spot in the sudoku """
 
     # a value is a possible values, when it is not in the column,
     # row or block already.
 
-    possible = {i for i in NUMBERS if not i in get_column(m, col)
-                and not i in get_row(m, row)
-                and not i in get_block(m, row, col)}
+    possible = {i for i in NUMBERS if not i in get_column(su, col)
+                and not i in get_row(su, row)
+                and not i in get_block(su, row, col)}
 
     return possible
 
-def get_row(m, i):
+def get_row(su, i):
     """ get the ith row of the sudoku """
-    return m[i]
+    return su[i]
 
-def get_column(m, i):
+def get_column(su, i):
     """ get the ith column of the sudoku """
-    return [m[j][i] for j in range(len(m))]
+    return [su[j][i] for j in range(len(su))]
 
-def get_block(m, col, row):
+def get_block(m, row, col):
     """ get the block in which the col and row fall. """
     block_i = 0
 
     for block in BLOCKS:
 
-        if not tuple((col, row)) in block:
+        if not tuple((row, col)) in block:
             block_i += 1
         else:
             break
