@@ -190,17 +190,21 @@ def dirty_print_sudoku(sudoku):
 
 def pretty_print_sudoku(sudoku):
     """ print some additional stuff next to only numbers """
-    count = 0
+    add_lines = 0
+
+    if len(sudoku) == 16:
+        add_lines = 1
+
     print('\nSolution!')
     for item_list in sudoku:
-        print('-' * len(sudoku) * 4)
+        print('-' * len(sudoku) * (4 + add_lines))
         for item in item_list:
-            print(f'| {item} ', end="")
-            if item == 0:
-                count += 1
+            out = f'| {item} '
+            if item < 9 and add_lines:
+                out += ' '
+            print(out, end="")
         print('|')
-    print('-' * len(sudoku) * 4,'\n')
-    print(f'current open spots: {count}')
+    print('-' * len(sudoku) * (4 + add_lines),'\n')
 
 def main():
 
