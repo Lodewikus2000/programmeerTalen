@@ -3,7 +3,7 @@ import argparse
 import math
 import sys
 import collections
-import copy
+
 
 NUMBERS = 0
 POSITIONS = 0
@@ -56,8 +56,9 @@ def parse_int(inputstring):
         else:
             raise ValueError('The input could not be parsed wrong characters.')
 
-def solve_sudoku(sudoku, verbose, all):
-    """ solve a given sudoku grid, returns a solved grid """
+def solve_sudoku(sudoku, verbose):
+    """ solve a given sudoku grid, returns a solved grid
+        if the sudoku is unsolvable, it returns the original one"""
 
     possible_positions = build_possible_positions(sudoku)
 
@@ -71,20 +72,19 @@ def solve_sudoku(sudoku, verbose, all):
     # open_spots_current, possible_positions = fill_guaranteed(sudoku, open_spots,
     #                                                          verbose)
 
-    solutions = solve_stack(sudoku, verbose, all)
+    solved = solve_stack(sudoku, verbose)
 
     # if not open_spots_current == 0 and verbose:
     #     print('not done yet...\n')
-    print(f"aantal oplossingen: {len(solutions)}")
-    return solutions
+    return solved
 
-def solve_stack(sudoku, verbose=False, all=False):
+def solve_stack(sudoku, verbose=False):
     """
     """
 
     # Make a stack with the given sudoku on top
     stack = collections.deque([sudoku])
-    solved = []
+
 
     # While there is still a sudoku on the stack, take the top one
     while stack:
@@ -95,29 +95,31 @@ def solve_stack(sudoku, verbose=False, all=False):
         open_spots, possible_positions = fill_guaranteed(top)
 
         if (open_spots == 0):
-            solved.append(top)
-            if not all:
+            return top
 
-                return solved
         else:
-            if len(possible_positions) > 0:
+            # als er ook maar 1 vakje neit ingevuld kan worden, dan stoppen we natuurlijk
+            if len(possible_positions) == open_spots:
+
                 lowest_key = sorted(possible_positions, key=lambda k: len(possible_positions[k]))[0]
                 possibles = possible_positions[lowest_key]
                 row, col = lowest_key
 
                 for possible in possibles:
 
-                    sudoku_next = copy.deepcopy(top)
+                    # sudoku_next = copy.deepcopy(top)
+                    sudoku_next = [row[:] for row in top]
                     sudoku_next[row][col] = possible
 
                     stack.append(sudoku_next)
             else:
+
                 if verbose:
                     print("faulty sudoku:")
                     dirty_print_sudoku(top)
                     print("")
 
-    return solved
+    return sudoku
 
 
 
@@ -229,9 +231,28 @@ def get_block(m, row, col):
         else:
             break
 
-    block = {m[j][i] for (j, i) in BLOCKS[block_i]}
+    block = [m[j][i] for (j, i) in BLOCKS[block_i]]
 
     return block
+
+def is_valid(sudoku):
+    full = [k for k in range(1, len(sudoku)+1)]
+    for i in range(len(sudoku)):
+        for j in range(len(sudoku)):
+
+            if not ( sorted(get_row(sudoku, i))
+                    == sorted(get_column(sudoku, j))
+                    == sorted(get_block(sudoku,i,j))
+                    == full
+                    ):
+
+                # print(sorted(get_row(sudoku, i)))
+                # print(sorted(get_column(sudoku, j)))
+                # print(sorted(get_block(sudoku,i,j)))
+                # print(full)
+                # print("NEE")
+                return False
+    return True
 
 def dirty_print_sudoku(sudoku):
     """ print only the numbers """
@@ -271,27 +292,23 @@ def main():
     parser.add_argument('-prettyprint', action="store_true",
                         help='boolean to pretty print.',
                         default=False)
-    parser.add_argument('-all', action="store_true",
-                        help='boolean for all solutions',
-                        default=False)
-
 
     # parse arguments
     args = parser.parse_args()
-    sudoku, pretty, verbose, all = args.sudoku_string, args.prettyprint, args.verbose, args.all
+    sudoku, pretty, verbose = args.sudoku_string, args.prettyprint, args.verbose
 
     sudoku = parse_sudoku(sudoku)
 
-    solutions = solve_sudoku(sudoku, verbose, all)
+    solved = solve_sudoku(sudoku, verbose)
 
-    if not solutions:
-        return 1
 
-    print("first solution:")
+    if not is_valid(solved):
+        sys.exit(1)
+
     if pretty:
-        pretty_print_sudoku(solutions[0])
+        pretty_print_sudoku(solved)
     else:
-        dirty_print_sudoku(solutions[0])
+        dirty_print_sudoku(solved)
 
     return 0
 
