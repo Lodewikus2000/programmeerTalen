@@ -4,10 +4,10 @@ import math
 import sys
 import collections
 
-
 NUMBERS = 0
 POSITIONS = 0
 BLOCKS = 0
+
 
 def parse_sudoku(file):
     """ parses a sudoku from a file """
@@ -18,7 +18,7 @@ def parse_sudoku(file):
         with open(file) as f:
             for line in f:
                 parsed.append([item for item in parse_int(line)])
-    except:
+    except IOError:
         raise ValueError(""" The sudoku file is not there, please"""
                          """ give a file to read from. """)
     size = len(parsed)
@@ -26,7 +26,7 @@ def parse_sudoku(file):
     try:
         len(parsed) == len(parsed[0])
 
-    except:
+    except ValueError:
         raise ValueError('The sudoku should be square.')
 
     block_size = int(math.sqrt(len(parsed)))
@@ -45,6 +45,7 @@ def parse_sudoku(file):
 
     return parsed
 
+
 def parse_int(inputstring):
     """ returns numbers in a given string as ints """
 
@@ -55,6 +56,7 @@ def parse_int(inputstring):
             yield int(i)
         else:
             raise ValueError('The input could not be parsed wrong characters.')
+
 
 def solve_sudoku(sudoku, verbose):
     """ solve a given sudoku grid, returns a solved grid
@@ -67,16 +69,10 @@ def solve_sudoku(sudoku, verbose):
     if verbose:
         print(f'startpoint. Open spots: {open_spots}.\n')
 
-    # fill in the certain values in the sudoku,
-    # to reduce the search tree problem.
-    # open_spots_current, possible_positions = fill_guaranteed(sudoku, open_spots,
-    #                                                          verbose)
-
     solved = solve_stack(sudoku, verbose)
 
-    # if not open_spots_current == 0 and verbose:
-    #     print('not done yet...\n')
     return solved
+
 
 def solve_stack(sudoku, verbose=False):
     """
@@ -84,7 +80,6 @@ def solve_stack(sudoku, verbose=False):
 
     # Make a stack with the given sudoku on top
     stack = collections.deque([sudoku])
-
 
     # While there is still a sudoku on the stack, take the top one
     while stack:
@@ -98,12 +93,13 @@ def solve_stack(sudoku, verbose=False):
             return top
 
         else:
-            # als er ook maar 1 vakje neit ingevuld kan worden, dan stoppen we natuurlijk
+            # Stoppen als er een oninvulbaar vakje is
             if len(possible_positions) == open_spots:
 
-                lowest_key = sorted(possible_positions, key=lambda k: len(possible_positions[k]))[0]
-                possibles = possible_positions[lowest_key]
-                row, col = lowest_key
+                key = sorted(possible_positions,
+                             key=lambda k: len(possible_positions[k]))[0]
+                possibles = possible_positions[key]
+                row, col = key
 
                 for possible in possibles:
 
@@ -120,9 +116,6 @@ def solve_stack(sudoku, verbose=False):
                     print("")
 
     return sudoku
-
-
-
 
 
 def fill_guaranteed(sudoku, verbose=False):
@@ -165,15 +158,11 @@ def fill_guaranteed(sudoku, verbose=False):
                     print(f'filled in {key} with {val}.')
 
                 break
-
-
-
-
-
     if verbose:
         print('\ncurrent open spots:', open_spots_current)
 
     return open_spots_current, possible_positions
+
 
 # def fill_set(sudoku, possible_positions):
 #     for key in possible_positions:
@@ -188,6 +177,7 @@ def fill_guaranteed(sudoku, verbose=False):
 #         possible_positions[key] = {i for i in possible_positions[key]
 #                                    if i not in row}
 
+
 def build_possible_positions(sudoku):
     """ build a dict with (col, row): possible values from a given sudoku """
     possibles = {}
@@ -199,26 +189,30 @@ def build_possible_positions(sudoku):
 
     return possibles
 
+
 def possible_per_spot(su, row, col):
     """ return the possible values for a spot in the sudoku """
 
     # a value is a possible values, when it is not in the column,
     # row or block already.
 
-    possible = {i for i in NUMBERS if not i in get_column(su, col)
-                and not i in get_row(su, row)
-                and not i in get_block(su, row, col)}
+    possible = {i for i in NUMBERS if i not in get_column(su, col)
+                and i not in get_row(su, row)
+                and i not in get_block(su, row, col)}
 
     return possible
+
 
 def get_row(su, i):
     """ get the ith row of the sudoku """
     return su[i]
 
+
 def get_column(su, i):
     """ get the ith column of the sudoku """
 
     return [su[j][i] for j in range(len(su))]
+
 
 def get_block(m, row, col):
     """ get the block in which the col and row fall. """
@@ -235,14 +229,15 @@ def get_block(m, row, col):
 
     return block
 
+
 def is_valid(sudoku):
     full = [k for k in range(1, len(sudoku)+1)]
     for i in range(len(sudoku)):
         for j in range(len(sudoku)):
 
-            if not ( sorted(get_row(sudoku, i))
+            if not (sorted(get_row(sudoku, i))
                     == sorted(get_column(sudoku, j))
-                    == sorted(get_block(sudoku,i,j))
+                    == sorted(get_block(sudoku, i, j))
                     == full
                     ):
 
@@ -254,12 +249,14 @@ def is_valid(sudoku):
                 return False
     return True
 
+
 def dirty_print_sudoku(sudoku):
     """ print only the numbers """
     for item_list in sudoku:
         for item in item_list:
             print(f'{item} ', end='')
         print('')
+
 
 def pretty_print_sudoku(sudoku):
     """ print some additional stuff next to only numbers """
@@ -277,10 +274,10 @@ def pretty_print_sudoku(sudoku):
                 out += ' '
             print(out, end="")
         print('|')
-    print('-' * len(sudoku) * (4 + add_lines),'\n')
+    print('-' * len(sudoku) * (4 + add_lines), '\n')
+
 
 def main():
-
     # define an argument parser
     # consult -h for help
     parser = argparse.ArgumentParser()
@@ -295,12 +292,11 @@ def main():
 
     # parse arguments
     args = parser.parse_args()
-    sudoku, pretty, verbose = args.sudoku_string, args.prettyprint, args.verbose
+    su, pretty, verbose = args.sudoku_string, args.prettyprint, args.verbose
 
-    sudoku = parse_sudoku(sudoku)
+    su = parse_sudoku(su)
 
-    solved = solve_sudoku(sudoku, verbose)
-
+    solved = solve_sudoku(su, verbose)
 
     if not is_valid(solved):
         sys.exit(1)
@@ -311,6 +307,7 @@ def main():
         dirty_print_sudoku(solved)
 
     return 0
+
 
 if __name__ == "__main__":
     main()
