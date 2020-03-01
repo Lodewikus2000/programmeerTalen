@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+"""
+The module below implements a Sudoku Solver, using a stack.
+Refer to the -h option the the program to get help on how to run it.
+"""
+
+__author__ = """Leo Schreuder & Pim van Helvoirt"""
+__copyright__ = "None"
+__credits__ = [""]
+__license__ = "GPL"
+__version__ = "1.0.7"
+__maintainer__ = ""
+__email__ = "leoschreuders@hotmail.com pim.van.helvoirt@home.nl"
+__status__ = "Working"
+
 import argparse
 import math
 import sys
@@ -11,7 +25,7 @@ BLOCKS = 0
 
 
 def parse_sudoku(file):
-    """ parses a sudoku from a file """
+    """ parses a sudoku from a given file """
 
     parsed = []
 
@@ -26,8 +40,8 @@ def parse_sudoku(file):
 
 
     if not (len(parsed) == len(parsed[0])):
-        raise ValueError(f'The sudoku should be square. Current size is {len(parsed)} by {len(parsed[0])}')
-
+        raise ValueError("""The sudoku should be square. Current size is"""
+                         f""" {len(parsed)} by {len(parsed[0])}""")
 
     block_size = int(math.sqrt(len(parsed)))
 
@@ -69,7 +83,6 @@ def solve_sudoku(sudoku, verbose, experiment):
     if verbose:
         print(f'startpoint. Open spots: {open_spots}.\n')
 
-
     if experiment:
         su2 = [row[:] for row in sudoku]
 
@@ -77,21 +90,20 @@ def solve_sudoku(sudoku, verbose, experiment):
         solved2  = solve_stack(su2, verbose, dumb=True)
         end_time = time.time()
         print("----------")
-        print(f"Without optimization: {end_time - start_time} ms")
+        print(f"Without optimization: {end_time - start_time} s")
 
     start_time = time.time()
     solved = solve_stack(sudoku, verbose)
     end_time = time.time()
     if experiment:
         print("----------")
-        print(f"Without optimization: {end_time - start_time} ms")
+        print(f"With optimization: {end_time - start_time} s")
 
     return solved
 
 
 def solve_stack(sudoku, verbose=False, dumb=False):
-    """
-    """
+    """ Takes a sudoku as arguments and returns a solved sudoku """
 
     # Make a stack with the given sudoku on top
     stack = collections.deque([sudoku])
@@ -109,7 +121,8 @@ def solve_stack(sudoku, verbose=False, dumb=False):
 
         else:
             if possible_positions:
-            # Stoppen als er een oninvulbaar vakje is
+
+            # Stop als er een oninvulbaar vakje is
                 if len(possible_positions) == open_spots:
 
                     if dumb:
@@ -122,7 +135,6 @@ def solve_stack(sudoku, verbose=False, dumb=False):
                     row, col = key
 
                     for possible in possibles:
-
 
                         sudoku_next = [row[:] for row in top]
                         sudoku_next[row][col] = possible
@@ -148,9 +160,7 @@ def fill_guaranteed(sudoku, verbose=False):
 
         filling_guarenteed = False
 
-        # build the set of possible positions
         possible_positions = build_possible_positions(sudoku)
-
         open_spots_current = len(possible_positions.keys())
 
         # walk over the keys in the possible positions dictionary
@@ -202,9 +212,6 @@ def build_possible_positions(sudoku):
 def possible_per_spot(su, row, col):
     """ return the possible values for a spot in the sudoku """
 
-    # a value is a possible values, when it is not in the column,
-    # row or block already.
-
     possible = {i for i in NUMBERS if i not in get_column(su, col)
                 and i not in get_row(su, row)
                 and i not in get_block(su, row, col)}
@@ -224,7 +231,7 @@ def get_column(su, i):
 
 
 def get_block(m, row, col):
-    """ get the block in which the col and row fall. """
+    """ get the values in the block in which the col and row fall. """
     block_i = 0
 
     for block in BLOCKS:
@@ -240,21 +247,16 @@ def get_block(m, row, col):
 
 
 def is_valid(sudoku):
-    full = [k for k in range(1, len(sudoku)+1)]
+    """ check whether a given sudoku is a valid sudoku """
+
     for i in range(len(sudoku)):
         for j in range(len(sudoku)):
 
             if not (sorted(get_row(sudoku, i))
                     == sorted(get_column(sudoku, j))
                     == sorted(get_block(sudoku, i, j))
-                    == full
+                    == sorted(NUMBERS)
                     ):
-
-                # print(sorted(get_row(sudoku, i)))
-                # print(sorted(get_column(sudoku, j)))
-                # print(sorted(get_block(sudoku,i,j)))
-                # print(full)
-                # print("NEE")
                 return False
     return True
 
@@ -299,19 +301,20 @@ def main():
                         help='boolean to pretty print.',
                         default=False)
     parser.add_argument('-experiment', action="store_true",
-                        help='boolean to run experiment.',
+                        help='boolean to run an optimization experiment.',
                         default=False)
 
     # parse arguments
     args = parser.parse_args()
-    su, pretty, verbose, experiment = args.sudoku_string, args.prettyprint, args.verbose, args.experiment
+    su, pretty, verbose, experiment = (args.sudoku_string, args.prettyprint,
+                                       args.verbose, args.experiment)
 
     su = parse_sudoku(su)
-
 
     solved = solve_sudoku(su, verbose, experiment)
 
     if not is_valid(solved):
+        raise ValueError("""The sudoku provided as input is not valid.""")
         sys.exit(1)
 
     if pretty:
