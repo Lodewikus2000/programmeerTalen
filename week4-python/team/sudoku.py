@@ -24,11 +24,10 @@ def parse_sudoku(file):
                          """ give a file to read from. """)
     size = len(parsed)
 
-    try:
-        len(parsed) == len(parsed[0])
 
-    except ValueError:
-        raise ValueError('The sudoku should be square.')
+    if not (len(parsed) == len(parsed[0])):
+        raise ValueError(f'The sudoku should be square. Current size is {len(parsed)} by {len(parsed[0])}')
+
 
     block_size = int(math.sqrt(len(parsed)))
 
@@ -69,7 +68,6 @@ def solve_sudoku(sudoku, verbose, experiment):
 
     if verbose:
         print(f'startpoint. Open spots: {open_spots}.\n')
-
 
 
     if experiment:
@@ -186,18 +184,7 @@ def fill_guaranteed(sudoku, verbose=False):
     return open_spots_current, possible_positions
 
 
-# def fill_set(sudoku, possible_positions):
-#     for key in possible_positions:
-#         (row, col) = key
-#
-#         row = set()
-#         for i in POSITIONS:
-#             if possible_positions.get((i, row), False):
-#                 possible = possible_positions[(i, row)]
-#                 row.union(possible)
-#
-#         possible_positions[key] = {i for i in possible_positions[key]
-#                                    if i not in row}
+
 
 
 def build_possible_positions(sudoku):
