@@ -3,6 +3,7 @@ import argparse
 import math
 import sys
 import collections
+import time
 
 NUMBERS = 0
 POSITIONS = 0
@@ -58,7 +59,7 @@ def parse_int(inputstring):
             raise ValueError('The input could not be parsed wrong characters.')
 
 
-def solve_sudoku(sudoku, verbose):
+def solve_sudoku(sudoku, verbose, experiment):
     """ solve a given sudoku grid, returns a solved grid
         if the sudoku is unsolvable, it returns the original one"""
 
@@ -69,12 +70,28 @@ def solve_sudoku(sudoku, verbose):
     if verbose:
         print(f'startpoint. Open spots: {open_spots}.\n')
 
+
+
+    if experiment:
+        su2 = [row[:] for row in sudoku]
+
+        start_time = time.time()
+        solved2  = solve_stack(su2, verbose, dumb=True)
+        end_time = time.time()
+        print("----------")
+        print(f"Without optimization: {end_time - start_time} ms")
+
+    start_time = time.time()
     solved = solve_stack(sudoku, verbose)
+    end_time = time.time()
+    if experiment:
+        print("----------")
+        print(f"Without optimization: {end_time - start_time} ms")
 
     return solved
 
 
-def solve_stack(sudoku, verbose=False):
+def solve_stack(sudoku, verbose=False, dumb=False):
     """
     """
 
@@ -93,27 +110,32 @@ def solve_stack(sudoku, verbose=False):
             return top
 
         else:
+            if possible_positions:
             # Stoppen als er een oninvulbaar vakje is
-            if len(possible_positions) == open_spots:
+                if len(possible_positions) == open_spots:
 
-                key = sorted(possible_positions,
-                             key=lambda k: len(possible_positions[k]))[0]
-                possibles = possible_positions[key]
-                row, col = key
+                    if dumb:
+                        key = list(possible_positions.keys())[0]
+                    else:
+                        key = sorted(possible_positions,
+                                     key=lambda k: len(possible_positions[k]))[0]
 
-                for possible in possibles:
+                    possibles = possible_positions[key]
+                    row, col = key
 
-                    # sudoku_next = copy.deepcopy(top)
-                    sudoku_next = [row[:] for row in top]
-                    sudoku_next[row][col] = possible
+                    for possible in possibles:
 
-                    stack.append(sudoku_next)
-            else:
 
-                if verbose:
-                    print("faulty sudoku:")
-                    dirty_print_sudoku(top)
-                    print("")
+                        sudoku_next = [row[:] for row in top]
+                        sudoku_next[row][col] = possible
+
+                        stack.append(sudoku_next)
+                else:
+
+                    if verbose:
+                        print("faulty sudoku:")
+                        dirty_print_sudoku(top)
+                        print("")
 
     return sudoku
 
@@ -289,14 +311,18 @@ def main():
     parser.add_argument('-prettyprint', action="store_true",
                         help='boolean to pretty print.',
                         default=False)
+    parser.add_argument('-experiment', action="store_true",
+                        help='boolean to run experiment.',
+                        default=False)
 
     # parse arguments
     args = parser.parse_args()
-    su, pretty, verbose = args.sudoku_string, args.prettyprint, args.verbose
+    su, pretty, verbose, experiment = args.sudoku_string, args.prettyprint, args.verbose, args.experiment
 
     su = parse_sudoku(su)
 
-    solved = solve_sudoku(su, verbose)
+
+    solved = solve_sudoku(su, verbose, experiment)
 
     if not is_valid(solved):
         sys.exit(1)
