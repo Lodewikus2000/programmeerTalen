@@ -39,6 +39,10 @@ def parse_sudoku(file):
                          """ give a file to read from. """)
     size = len(parsed)
 
+    if not size:
+        raise ValueError(""" The sudoku file is empty, please"""
+                         """ give a file to read from. """)
+
     if not len(parsed) == len(parsed[0]):
         raise ValueError("""The sudoku should be square. Current size is"""
                          f""" {len(parsed)} by {len(parsed[0])}""")
@@ -88,7 +92,7 @@ def solve_sudoku(sudoku, verbose, experiment):
         su2 = [row[:] for row in sudoku]
 
         start_time = time.time()
-        solved2 = solve_stack(su2, verbose, dumb=True)
+        solve_stack(su2, verbose, dumb=True)
         end_time = time.time()
         print("----------")
         print(f"Without optimization: {end_time - start_time} s")
