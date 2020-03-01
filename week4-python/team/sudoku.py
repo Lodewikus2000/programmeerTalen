@@ -13,6 +13,7 @@ __maintainer__ = ""
 __email__ = "leoschreuders@hotmail.com pim.van.helvoirt@home.nl"
 __status__ = "Working"
 
+
 import argparse
 import math
 import sys
@@ -38,8 +39,7 @@ def parse_sudoku(file):
                          """ give a file to read from. """)
     size = len(parsed)
 
-
-    if not (len(parsed) == len(parsed[0])):
+    if not len(parsed) == len(parsed[0]):
         raise ValueError("""The sudoku should be square. Current size is"""
                          f""" {len(parsed)} by {len(parsed[0])}""")
 
@@ -54,7 +54,8 @@ def parse_sudoku(file):
     NUMBERS = {i for i in range(1, size + 1)}
     POSITIONS = {i for i in range(1, size)}
     BLOCKS = [tuple((j + b1, i + b2) for i in range(block_size)
-              for j in range(block_size)) for b1 in range(0, size, block_size)
+                    for j in range(block_size))
+              for b1 in range(0, size, block_size)
               for b2 in range(0, size, block_size)]
 
     return parsed
@@ -87,7 +88,7 @@ def solve_sudoku(sudoku, verbose, experiment):
         su2 = [row[:] for row in sudoku]
 
         start_time = time.time()
-        solved2  = solve_stack(su2, verbose, dumb=True)
+        solved2 = solve_stack(su2, verbose, dumb=True)
         end_time = time.time()
         print("----------")
         print(f"Without optimization: {end_time - start_time} s")
@@ -118,18 +119,16 @@ def solve_stack(sudoku, verbose=False, dumb=False):
 
         if (open_spots == 0):
             return top
-
         else:
             if possible_positions:
-
-            # Stop als er een oninvulbaar vakje is
+                # Stop als er een oninvulbaar vakje is
                 if len(possible_positions) == open_spots:
 
                     if dumb:
                         key = list(possible_positions.keys())[0]
                     else:
-                        key = sorted(possible_positions,
-                                     key=lambda k: len(possible_positions[k]))[0]
+                        key = sorted(possible_positions, key=lambda k:
+                                     len(possible_positions[k]))[0]
 
                     possibles = possible_positions[key]
                     row, col = key
@@ -169,7 +168,7 @@ def fill_guaranteed(sudoku, verbose=False):
                           reverse=True):
 
             # drop filled in positions from the dictionary
-            if len(possible_positions[key]) == 0:
+            if not possible_positions[key]:
                 possible_positions.pop(key)
 
             # if there is only one possible value, fill it in.
@@ -194,9 +193,6 @@ def fill_guaranteed(sudoku, verbose=False):
     return open_spots_current, possible_positions
 
 
-
-
-
 def build_possible_positions(sudoku):
     """ build a dict with (col, row): possible values from a given sudoku """
     possibles = {}
@@ -212,9 +208,9 @@ def build_possible_positions(sudoku):
 def possible_per_spot(su, row, col):
     """ return the possible values for a spot in the sudoku """
 
-    possible = {i for i in NUMBERS if i not in get_column(su, col)
-                and i not in get_row(su, row)
-                and i not in get_block(su, row, col)}
+    possible = {i for i in NUMBERS if i not in get_column(su, col) and
+                i not in get_row(su, row) and
+                i not in get_block(su, row, col)}
 
     return possible
 
@@ -252,11 +248,10 @@ def is_valid(sudoku):
     for i in range(len(sudoku)):
         for j in range(len(sudoku)):
 
-            if not (sorted(get_row(sudoku, i))
-                    == sorted(get_column(sudoku, j))
-                    == sorted(get_block(sudoku, i, j))
-                    == sorted(NUMBERS)
-                    ):
+            if not (sorted(get_row(sudoku, i)) ==
+                    sorted(get_column(sudoku, j)) ==
+                    sorted(get_block(sudoku, i, j)) ==
+                    sorted(NUMBERS)):
                 return False
     return True
 
@@ -315,7 +310,7 @@ def main():
 
     if not is_valid(solved):
         raise ValueError("""The sudoku provided as input is not valid.""")
-        sys.exit(1)
+        sys.exit()
 
     if pretty:
         pretty_print_sudoku(solved)
