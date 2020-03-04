@@ -38,7 +38,7 @@ restart() ->
 restart(Board) ->
     ok.
 
-move(X,Y) ->
+move(Y,X) ->
   Board = get_board(),
 
   Member = is_member({X, Y}, Board),
@@ -53,9 +53,9 @@ move(X,Y) ->
 
   if
     Member ->
-      {not_open};
+      not_open;
     not Valid ->
-      {not_valid};
+      not_valid;
     true ->
       gen_server:cast(ttt, {write, X, Y, Player})
     end.
@@ -66,8 +66,15 @@ is_finished() ->
 get_board() -> gen_server:call(ttt, read).
 
 show_board(Board) ->
-    " | | ~n------~n | | ~n------~n | | ~n".
+    String = [filled_with(Y,X, Board) ++ fill(X,Y) || X <- [0,1,2], Y <- [0,1,2]],
+    flatten(String).
 
+% Van stackoverflow https://stackoverflow.com/questions/9344785/flatten-a-list-of-nested-lists-in-erlang
+flatten(X)               -> flatten(X,[]).
+flatten([],Acc)          -> Acc;
+flatten([[]|T],Acc)      -> flatten(T, Acc);
+flatten([[_|_]=H|T],Acc) -> flatten(T, flatten(H,Acc));
+flatten([H|T],Acc)       -> flatten(T,Acc++[H]) .
 
 is_member(_, []) -> false;
 is_member({X, Y}, [H|T]) ->
@@ -78,18 +85,46 @@ is_member({X, Y}, [H|T]) ->
       is_member({X, Y}, T)
   end.
 
+filled_with(_,_, []) -> " ";
+filled_with(X,Y, [H|T]) ->
+    case H of
+      {X, Y, 1} ->
+        "O";
+      {X, Y, 2} ->
+        "X";
+      {_,_,_} ->
+        filled_with(X, Y, T)
+    end.
+
+fill(X,Y) ->
+  case {X,Y} of
+    {_, 0} ->
+      "|";
+    {_, 1} ->
+      "|";
+    {0, 2} ->
+      "~n------~n";
+    {1, 2} ->
+      "~n------~n";
+    {2, 2} ->
+      "~n"
+    end.
+
+
+
+
 %% TODO: Add the required calls.
 % omdat we de state niet aanpassen, kunnen we hergebruiken
 handle_call(read, _From, State) ->
-  { reply, State, State };
+  { reply, State, State }.
 
-handle_call(terminate, _From, State) ->
-    {stop, normal, ok, State}.
+% handle_call(terminate, _From, State) ->
+%     {stop, normal, ok, State}.
 
 handle_cast({write, X,Y,P} , State) ->
-  { noreply, State ++ [{X,Y,P}] };
-handle_cast(restart, _State) ->
-    {noreply, []}.
+  { noreply, State ++ [{X,Y,P}] }.
+% handle_cast(restart, _State) ->
+%     {noreply, []}.
 
 terminate(normal, _) ->
     ok.
