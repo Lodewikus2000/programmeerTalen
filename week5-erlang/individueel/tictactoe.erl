@@ -38,7 +38,7 @@ restart() ->
 restart(Board) ->
     ok.
 
-move(Y,X) ->
+move(X,Y) ->
   Board = get_board(),
 
   Member = is_member({X, Y}, Board),
@@ -66,7 +66,7 @@ is_finished() ->
 get_board() -> gen_server:call(ttt, read).
 
 show_board(Board) ->
-    String = [filled_with(Y,X, Board) ++ fill(X,Y) || X <- [0,1,2], Y <- [0,1,2]],
+    String = [filled_with(Y,X, Board) ++ fill(Y,X) || X <- [0,1,2], Y <- [0,1,2]],
     flatten(String).
 
 % Van stackoverflow https://stackoverflow.com/questions/9344785/flatten-a-list-of-nested-lists-in-erlang
@@ -98,13 +98,13 @@ filled_with(X,Y, [H|T]) ->
 
 fill(X,Y) ->
   case {X,Y} of
-    {_, 0} ->
+    {0, _} ->
       "|";
-    {_, 1} ->
+    {1, _} ->
       "|";
-    {0, 2} ->
+    {2, 0} ->
       "~n------~n";
-    {1, 2} ->
+    {2, 1} ->
       "~n------~n";
     {2, 2} ->
       "~n"
