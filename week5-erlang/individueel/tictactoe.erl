@@ -1,81 +1,155 @@
-% OKE LEO DIT MOET JE NOG DOEN:
-%
-% call stuurt altijd antwoord terug, cast niet
-%
-%
-%
-%
-%
-%
-%
-%
-
-
 -module(tictactoe).
--import(lists,[last/1]).
 -behaviour(gen_server).
+
 
 -export([start_link/0, start_link/1, print_board/0, print_board/1, show_board/1,
      restart/0, restart/1, move/2, is_finished/0, get_board/0]).
 -export([init/1, handle_call/3, handle_cast/2,
          terminate/2, code_change/3]).
 
+
 % Starts with an empty board.
 start_link() ->
     start_link([]).
 
+
 % Starts with a preconfigured board.
-% tictactoe omdat de module zo heet
 start_link(Board) ->
     gen_server:start_link({local, ttt}, tictactoe, Board, []).
 
+
 init(Board) -> {ok, Board}.
 
-%%% TODO: implement these functions.
+
 restart() ->
-    ok.
+    restart([]).
+
 
 restart(Board) ->
-    ok.
+    gen_server:stop(ttt),
+    start_link(Board).
+
 
 move(X,Y) ->
-  Board = get_board(),
 
-  Member = is_member({X, Y}, Board),
-  Valid = (0 =< X) and (X =< 2) and ( 0 =< Y) and (Y =< 2),
-  if
-    Board =:= [] ->
-      Player = 1;
-    true ->
-      {_, _, Previous_player} = last(Board),
-      Player = (Previous_player rem 2) + 1
-    end,
+    Won = anyone_won(),
+    case Won of
 
-  if
-    Member ->
-      not_open;
-    not Valid ->
-      not_valid;
-    true ->
-      gen_server:cast(ttt, {write, X, Y, Player})
-    end.
+      nobody ->
+
+          Board = get_board(),
+
+          % Check if these coordinates are already occupied.
+          Member = is_member({X, Y}, Board),
+          % Check if the coordiantes are on the board.
+          Valid = (0 =< X) and (X =< 2) and ( 0 =< Y) and (Y =< 2),
+
+          if
+            Member ->
+              not_open;
+            not Valid ->
+              not_valid;
+            true ->
+              gen_server:cast(ttt, {write, X, Y, 1}),
+              Finished = is_finished(),
+              if
+                Finished ->
+                  % If the game is finished, return who won (if anyone).
+                  anyone_won();
+                true ->
+                  move_PC(),
+                  ok
+                end
+            end;
+        _ ->
+          Won
+        end.
+
+
+move_PC() ->
+    Moves = [{X,Y} || X <- [0,1,2], Y <- [0,1,2]],
+    Board = get_board(),
+    move_PC1(Moves, Board).
+
+
+move_PC1([{X,Y} | T], Board) ->
+    Member = is_member({X, Y}, Board),
+    if
+      Member ->
+        move_PC1(T, Board);
+      true ->
+        gen_server:cast(ttt, {write, X, Y, 2})
+      end.
+
 
 is_finished() ->
-    ok.
+    Board = get_board(),
+    if
+      % The board is finished if it's full.
+      length(Board) =:= 9 ->
+        true;
+      % If the board is not full, it is finished if someone won.
+      true ->
+        Won = anyone_won(),
+        case Won of
+          nobody ->
+            false;
+          _ ->
+            true
+          end
+      end.
+
+
+anyone_won() ->
+    Board = get_board(),
+    Row0 = [replace(X,0, Board) || X <- [0,1,2]],
+    Row1 = [replace(X,1, Board) || X <- [0,1,2]],
+    Row2 = [replace(X,2, Board) || X <- [0,1,2]],
+    Col0 = [replace(0,Y, Board) || Y <- [0,1,2]],
+    Col1 = [replace(1,Y, Board) || Y <- [0,1,2]],
+    Col2 = [replace(2,Y, Board) || Y <- [0,1,2]],
+    Diag1 = [replace(X,X, Board) || X <- [0,1,2]],
+    Diag2 = [replace(0,2, Board), replace(1,1, Board), replace(2,0, Board)],
+    All = [Row0, Row1, Row2, Col0, Col1, Col2, Diag1, Diag2],
+    won(All).
+
+
+won([H]) ->
+    case H of
+      ["O", "O", "O"] ->
+        {won, 1};
+      ["X", "X", "X"] ->
+        {won, 2};
+      [_, _, _] ->
+        nobody
+      end;
+won([H|T]) ->
+    case H of
+      ["O", "O", "O"] ->
+        {won, 1};
+      ["X", "X", "X"] ->
+        {won, 2};
+      [_, _, _] ->
+        won(T)
+      end.
+
 
 get_board() -> gen_server:call(ttt, read).
 
+
 show_board(Board) ->
-    String = [filled_with(Y,X, Board) ++ fill(Y,X) || X <- [0,1,2], Y <- [0,1,2]],
-    flatten(String).
+    % The assignment switches X and Y for some reason.
+    String = [replace(Y,X, Board) ++ pretty(Y,X) || X <- [0,1,2], Y <- [0,1,2]],
+    join_strings(String).
 
-% Van stackoverflow https://stackoverflow.com/questions/9344785/flatten-a-list-of-nested-lists-in-erlang
-flatten(X)               -> flatten(X,[]).
-flatten([],Acc)          -> Acc;
-flatten([[]|T],Acc)      -> flatten(T, Acc);
-flatten([[_|_]=H|T],Acc) -> flatten(T, flatten(H,Acc));
-flatten([H|T],Acc)       -> flatten(T,Acc++[H]) .
 
+% This function joins a list of strings.
+join_strings([]) -> [];
+join_strings([H|T]) ->
+    H ++ join_strings(T).
+
+
+% Check if a coordinate pair is used in the current board.
 is_member(_, []) -> false;
 is_member({X, Y}, [H|T]) ->
   if
@@ -85,18 +159,21 @@ is_member({X, Y}, [H|T]) ->
       is_member({X, Y}, T)
   end.
 
-filled_with(_,_, []) -> " ";
-filled_with(X,Y, [H|T]) ->
+
+% T translate a coordinate in the board to either a "O", "X", or " ".
+replace(_,_, []) -> " ";
+replace(X,Y, [H|T]) ->
     case H of
       {X, Y, 1} ->
         "O";
       {X, Y, 2} ->
         "X";
       {_,_,_} ->
-        filled_with(X, Y, T)
+        replace(X, Y, T)
     end.
 
-fill(X,Y) ->
+
+pretty(X,Y) ->
   case {X,Y} of
     {0, _} ->
       "|";
@@ -111,20 +188,16 @@ fill(X,Y) ->
     end.
 
 
-
-
 %% TODO: Add the required calls.
-% omdat we de state niet aanpassen, kunnen we hergebruiken
 handle_call(read, _From, State) ->
-  { reply, State, State }.
-
-% handle_call(terminate, _From, State) ->
-%     {stop, normal, ok, State}.
+  { reply, State, State };
+handle_call(terminate, _From, State) ->
+    {stop, normal, ok, State}.
 
 handle_cast({write, X,Y,P} , State) ->
-  { noreply, State ++ [{X,Y,P}] }.
-% handle_cast(restart, _State) ->
-%     {noreply, []}.
+  { noreply, State ++ [{X,Y,P}] };
+handle_cast(restart, _State) ->
+    {noreply, []}.
 
 terminate(normal, _) ->
     ok.
