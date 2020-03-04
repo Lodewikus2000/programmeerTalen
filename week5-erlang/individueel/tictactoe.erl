@@ -1,4 +1,18 @@
+% OKE LEO DIT MOET JE NOG DOEN:
+%
+% call stuurt altijd antwoord terug, cast niet
+%
+%
+%
+%
+%
+%
+%
+%
+
+
 -module(tictactoe).
+-import(lists,[last/1]).
 -behaviour(gen_server).
 
 -export([start_link/0, start_link/1, print_board/0, print_board/1, show_board/1,
@@ -11,6 +25,7 @@ start_link() ->
     start_link([]).
 
 % Starts with a preconfigured board.
+% tictactoe omdat de module zo heet
 start_link(Board) ->
     gen_server:start_link({local, ttt}, tictactoe, Board, []).
 
@@ -24,21 +39,55 @@ restart(Board) ->
     ok.
 
 move(X,Y) ->
-    ok.
+  Board = get_board(),
+
+  Member = is_member({X, Y}, Board),
+  Valid = (0 =< X) and (X =< 2) and ( 0 =< Y) and (Y =< 2),
+  if
+    Board =:= [] ->
+      Player = 1;
+    true ->
+      {_, _, Previous_player} = last(Board),
+      Player = (Previous_player rem 2) + 1
+    end,
+
+  if
+    Member ->
+      {not_open};
+    not Valid ->
+      {not_valid};
+    true ->
+      gen_server:cast(ttt, {write, X, Y, Player})
+    end.
 
 is_finished() ->
     ok.
 
-get_board() ->
-    ok.
+get_board() -> gen_server:call(ttt, read).
 
 show_board(Board) ->
-    ok.
+    " | | ~n------~n | | ~n------~n | | ~n".
 
-%%% TODO: Add the required calls.
+
+is_member(_, []) -> false;
+is_member({X, Y}, [H|T]) ->
+  if
+    ({X, Y, 1} =:= H ) or ({X, Y, 2} =:= H )  ->
+      true;
+    true ->
+      is_member({X, Y}, T)
+  end.
+
+%% TODO: Add the required calls.
+% omdat we de state niet aanpassen, kunnen we hergebruiken
+handle_call(read, _From, State) ->
+  { reply, State, State };
+
 handle_call(terminate, _From, State) ->
     {stop, normal, ok, State}.
 
+handle_cast({write, X,Y,P} , State) ->
+  { noreply, State ++ [{X,Y,P}] };
 handle_cast(restart, _State) ->
     {noreply, []}.
 
@@ -55,4 +104,3 @@ print_board() ->
 % This allows you to test printing without the server working.
 print_board(Board) ->
     io:fwrite(show_board(Board)).
-
