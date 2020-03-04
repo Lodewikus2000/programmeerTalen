@@ -1,3 +1,9 @@
+% Leo Schreuders
+% Programmeertalen
+%
+% This file keeps track of a tictactoe board on a gen_server, and handles
+% interaction with the tictactoe game.
+
 -module(tictactoe).
 -behaviour(gen_server).
 
@@ -30,6 +36,7 @@ restart(Board) ->
     start_link(Board).
 
 
+% Try to place an "O" at position (X,Y), after which the computer makes a move.
 move(X,Y) ->
 
     Won = anyone_won(),
@@ -160,7 +167,7 @@ is_member({X, Y}, [H|T]) ->
   end.
 
 
-% T translate a coordinate in the board to either a "O", "X", or " ".
+% Translate a coordinate in the board to either a "O", "X", or " ".
 replace(_,_, []) -> " ";
 replace(X,Y, [H|T]) ->
     case H of
@@ -188,7 +195,6 @@ pretty(X,Y) ->
     end.
 
 
-%% TODO: Add the required calls.
 handle_call(read, _From, State) ->
   { reply, State, State };
 handle_call(terminate, _From, State) ->
