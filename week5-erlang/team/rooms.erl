@@ -32,6 +32,7 @@ start_link(Rooms) ->
 init(Rooms) -> {ok, Rooms}.
 
 
+% Try to add a wall to the Grid. Returns the new grid, or an error.
 add_wall(X, Y, Dir, Grid) ->
     {N, M, List} = Grid,
     Present = has_wall(X, Y, Dir, Grid),
@@ -58,6 +59,8 @@ build_random_wall(Grid) ->
     end.
 
 
+% Build a random completable wall, or if none of those exist, build a random
+% wall.
 build_wall(Grid) ->
     Completable_wall = get_completable_wall(Grid),
     if
@@ -89,6 +92,8 @@ get_all_walls(W, H) ->
   remove_dup(List).
 
 
+% Returns a random wall that would complete a room if built. If no such wall
+% exists, returns the empty list.
 get_completable_wall(Grid) ->
     All_completable_walls = get_completable_walls(Grid),
     Length = length(All_completable_walls),
@@ -101,6 +106,7 @@ get_completable_wall(Grid) ->
         end.
 
 
+% Returns a list of all walls that would complete a room if built.
 get_completable_walls(Grid) ->
     {M, N, List} = Grid,
     Walls = [get_open_cell_walls(X, Y, Grid) ||
@@ -110,6 +116,7 @@ get_completable_walls(Grid) ->
     lists:flatten(Walls).
 
 
+% Return a list of four tuples representing the four walls of a given cell.
 get_cell_walls(X,Y) ->
     [get_wall(X, Y, Dir) || Dir <- [north, east, south, west]].
 
@@ -128,12 +135,14 @@ get_open_cell_walls(X, Y, Grid) ->
       end.
 
 
-  get_open_spots(Grid) ->
+% Returns a list of tuples representing all positions without a wall.
+get_open_spots(Grid) ->
       {M, N, List} = Grid,
       All_walls = get_all_walls(M, N),
       lists:subtract(All_walls, List).
 
 
+% Returns a tuple representing a wall in the given position.
 get_wall(X, Y, Dir) ->
     case Dir of
       north ->  {{X , Y - 1}, {X, Y}};
@@ -189,29 +198,32 @@ remove_dup([H|T]) ->
       end.
 
 
+% Convert a vertical wall position to a wall "|" or no wall " ", padded with
+% spaces or a newline.
 v_line(T, List, M) ->
-  {{_, _},{X, _}} = T,
-  Member = member(T, List),
-  End = X =:= M,
-  case {Member, End} of
-    {false, false} ->
-      "   ";
-    {false, true} ->
-      " ~n";
-    {true, false} ->
-      "|  ";
-    {true, true} ->
-      "|~n"
-    end.
+      {{_, _},{X, _}} = T,
+      Member = member(T, List),
+      End = X =:= M,
+      case {Member, End} of
+        {false, false} ->
+          "   ";
+        {false, true} ->
+          " ~n";
+        {true, false} ->
+          "|  ";
+        {true, true} ->
+          "|~n"
+        end.
 
 
+% Returns a string representing the vertical walls in the given row.
 show_vlines(Row, {M, _, List}) ->
     Range = lists:seq(0, M),
     String_list = [ v_line({{X - 1, Row},{X, Row}}, List, M) || X <- Range ],
     join_strings(String_list).
 
 
-% Prints the row of horizontal wall positions above the given row.
+% Returns a string of horizontal wall positions above the given row.
 show_hlines(Row, {M, _, List}) ->
     Range = lists:seq(0, M-1),
     String_list = ["+"] ++ [ h_line({{X, Row - 1},{X, Row}}, List) ++ "+"
