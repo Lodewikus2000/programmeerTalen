@@ -287,8 +287,8 @@ player_process(Name, Other_player, Score) ->
 
 
 start_game(M, N) ->
-    P1 = spawn(rooms, player_process, [player_1, player_2, 0]),
-    P2 = spawn(rooms, player_process, [player_2, player_1, 0]),
+    P1 = spawn(?MODULE, player_process, [player_1, player_2, 0]),
+    P2 = spawn(?MODULE, player_process, [player_2, player_1, 0]),
     Name1 = player_1,
     Name2 = player_2,
     register(Name1, P1),
