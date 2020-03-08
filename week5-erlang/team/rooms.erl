@@ -59,7 +59,6 @@ build_wall(Grid) ->
             {M, N, List ++ [Completable_wall]}
         end.
 
-
 choose_random_wall(Grid) ->
   Open_spots = get_open_spots(Grid),
   Length = length(Open_spots),
@@ -269,9 +268,9 @@ turn(_, Grid) ->
 
     case get_completable_wall(Grid) of
         [] ->
-            {build_random_wall(Grid), done};
+            {build_wall(Grid), done};
         _ ->
-            {build_random_wall(Grid), again}
+            {build_wall(Grid), again}
     end.
 
 % Starts with an empty board. Default board is 6 x 6.
