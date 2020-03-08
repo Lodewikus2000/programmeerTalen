@@ -5,7 +5,7 @@
 % Rooms
 % Implement a game of 'kamertje verhuren'.
 
--module(rooms).
+-module(rooms_extra).
 
 
 -import(lists, [member/2]).
