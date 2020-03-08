@@ -237,12 +237,14 @@ player() ->
     ok.
 
 get_player(X) ->
+
     case X of
         1 -> "X";
         2 -> "O"
     end.
 
 play(Players, Grid) ->
+
     case game_over(Grid) of
         true -> io:fwrite("game over!~n"),
                 show_result(Grid),
@@ -251,9 +253,10 @@ play(Players, Grid) ->
     end.
 
 take_turns(Players = [P | Pother], Grid) ->
-    io:format("~p playing", [P]),
+
+    io:format("Player ~p playing a move...", [P]),
     {NewGrid, Turn} = turn(P, Grid),
-    print_grid(Grid),
+    print_grid(NewGrid),
     case Turn of
         again ->
             io:format("~p taking another turn!~n", [P]),
