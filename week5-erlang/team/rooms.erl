@@ -10,7 +10,7 @@
 
 -import(lists, [member/2]).
 
--export([init/1, start_link/0, start_link/1, restart/0, restart/3,
+-export([init/1, start_link/0, start_link/1, stop_link/1, restart/0, restart/3,
          handle_call/3, handle_cast/2, terminate/2, code_change/3]).
 
 -export([add_wall/4, build_wall/1, choose_random_wall/1, build_random_wall/1,
@@ -19,18 +19,7 @@
          get_open_spots/1, get_wall/3, has_wall/4, new_grid/2, print_grid/1,
          show_hlines/2, show_vlines/2]).
 
-% Starts with an empty board. Default board is 6 x 6.
-start_link() ->
-    start_link({6, 6, []}).
-
-
-% Start a gen_server with a preconfigured board.
-start_link(Rooms) ->
-    gen_server:start_link({local, rrr}, rooms, Rooms, []).
-
-
-init(Rooms) -> {ok, Rooms}.
-
+-export([start/0]).
 
 % Try to add a wall to the Grid. Returns the new grid, or an error.
 add_wall(X, Y, Dir, Grid) ->
@@ -57,7 +46,6 @@ build_random_wall(Grid) ->
       true ->
         {M, N, List ++ [Wall]}
     end.
-
 
 % Build a random completable wall, or if none of those exist, build a random
 % wall.
@@ -105,10 +93,9 @@ get_completable_wall(Grid) ->
             lists:nth(Random, All_completable_walls)
         end.
 
-
 % Returns a list of all walls that would complete a room if built.
 get_completable_walls(Grid) ->
-    {M, N, List} = Grid,
+    {M, N, _} = Grid,
     Walls = [get_open_cell_walls(X, Y, Grid) ||
                             X <- lists:seq(0, M-1),
                             Y <- lists:seq(0, N-1),
@@ -122,7 +109,6 @@ get_cell_walls(X,Y) ->
 
 
 get_grid() -> gen_server:call(rrr, read).
-
 
 get_open_cell_walls(X, Y, Grid) ->
     {_, _, List} = Grid,
@@ -197,7 +183,6 @@ remove_dup([H|T]) ->
         [H] ++ remove_dup(T)
       end.
 
-
 % Convert a vertical wall position to a wall "|" or no wall " ", padded with
 % spaces or a newline.
 v_line(T, List, M) ->
@@ -214,7 +199,6 @@ v_line(T, List, M) ->
         {true, true} ->
           "|~n"
         end.
-
 
 % Returns a string representing the vertical walls in the given row.
 show_vlines(Row, {M, _, List}) ->
@@ -235,24 +219,86 @@ join_strings([]) -> [];
 join_strings([H|T]) ->
     H ++ join_strings(T).
 
-% NOTE: TO DO: change to new handlers.
+game_over(Grid) ->
+    G = get_open_spots(Grid),
+    case G of
+        [] -> true;
+        _  -> false
+    end.
+
+show_result(_) ->
+    ok.
+
+% processes
+start() ->
+    play([1, 2], {6, 6, []}).
+
+player() ->
+    ok.
+
+get_player(X) ->
+    case X of
+        1 -> "X";
+        2 -> "O"
+    end.
+
+play(Players, Grid) ->
+    case game_over(Grid) of
+        true -> io:fwrite("game over!~n"),
+                show_result(Grid),
+                print_grid(Grid);
+        false -> take_turns(Players, Grid)
+    end.
+
+take_turns(Players = [P | Pother], Grid) ->
+    io:format("~p playing", [P]),
+    {NewGrid, Turn} = turn(P, Grid),
+    print_grid(Grid),
+    case Turn of
+        again ->
+            io:format("~p taking another turn!~n", [P]),
+            play(Players, NewGrid);
+        done ->
+            play(Pother ++ [P], NewGrid)
+    end.
+
+turn(_, Grid) ->
+
+    case get_completable_wall(Grid) of
+        [] ->
+            {build_random_wall(Grid), done};
+        _ ->
+            {build_random_wall(Grid), again}
+    end.
+
+% Starts with an empty board. Default board is 6 x 6.
+start_link() ->
+    start_link({{6, 6, []}, []}).
+
+% Start a gen_server with a preconfigured board.
+start_link(Rooms) ->
+    gen_server:start_link({local, rrr}, rooms, Rooms, []).
+
+stop_link(Rooms) ->
+    gen_server:call(Rooms, terminate).
+
+init(Rooms) -> {ok, Rooms}.
 
 restart() ->
     restart(6, 6, []).
 
 restart(X, Y, Walls) ->
     gen_server:stop(rrr),
-    start_link({X, Y, Walls}).
+    start_link({{X, Y, Walls}, []}).
 
 handle_call(read, _From, State) ->
-    { reply, State, State };
+    {reply, State, State};
 
 handle_call(terminate, _From, State) ->
     {stop, normal, ok, State}.
 
-
-handle_cast({write, T} , {N, M, List }) ->
-    { noreply, {N, M, List ++ [T] }};
+handle_cast({write, T} , {{N, M, List}, P}) ->
+    {noreply, {{N, M, List ++ [T]}, P}};
 
 handle_cast(restart, _State) ->
     {noreply, []}.
