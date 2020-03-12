@@ -5,21 +5,20 @@
 % Rooms
 % Implement a game of 'kamertje verhuren'.
 
--module(rooms).
--behaviour(gen_server).
+-module(rooms_extra).
+
 
 -import(lists, [member/2]).
 
--export([init/1, start_link/0, start_link/1, stop_link/1, restart/0, restart/3,
-         handle_call/3, handle_cast/2, terminate/2, code_change/3]).
 
 -export([add_wall/4, build_wall/1, choose_random_wall/1, build_random_wall/1,
          get_all_walls/2, get_cell_walls/2, get_completable_wall/1,
-         get_completable_walls/1, get_grid/0, get_open_cell_walls/3,
+         get_completable_walls/1, get_open_cell_walls/3,
          get_open_spots/1, get_wall/3, has_wall/4, new_grid/2, print_grid/1,
-         show_hlines/2, show_vlines/2]).
+         show_hlines/2, show_vlines/2,
+         start_game/2, game_over/1, turn/2, player_process/3]).
 
--export([start/0]).
+
 
 % Try to add a wall to the Grid. Returns the new grid, or an error.
 add_wall(X, Y, Dir, Grid) ->
@@ -58,6 +57,7 @@ build_wall(Grid) ->
             {M, N, List} = Grid,
             {M, N, List ++ [Completable_wall]}
         end.
+
 
 choose_random_wall(Grid) ->
   Open_spots = get_open_spots(Grid),
@@ -107,7 +107,7 @@ get_cell_walls(X,Y) ->
     [get_wall(X, Y, Dir) || Dir <- [north, east, south, west]].
 
 
-get_grid() -> gen_server:call(rrr, read).
+
 
 get_open_cell_walls(X, Y, Grid) ->
     {_, _, List} = Grid,
@@ -225,88 +225,76 @@ game_over(Grid) ->
         _  -> false
     end.
 
-show_result(_) ->
-    ok.
 
-% processes
-start() ->
-    play([1, 2], {6, 6, []}).
 
-player() ->
-    ok.
 
-get_player(X) ->
 
-    case X of
-        1 -> "X";
-        2 -> "O"
-    end.
 
-play(Players, Grid) ->
 
-    case game_over(Grid) of
-        true -> io:fwrite("game over!~n"),
-                show_result(Grid),
-                print_grid(Grid);
-        false -> take_turns(Players, Grid)
-    end.
 
-take_turns(Players = [P | Pother], Grid) ->
-
-    io:format("Player ~p playing a move...", [P]),
-    {NewGrid, Turn} = turn(P, Grid),
-    print_grid(NewGrid),
-    case Turn of
-        again ->
-            io:format("~p taking another turn!~n", [P]),
-            play(Players, NewGrid);
-        done ->
-            play(Pother ++ [P], NewGrid)
-    end.
-
-turn(_, Grid) ->
-
-    case get_completable_wall(Grid) of
-        [] ->
-            {build_wall(Grid), done};
-        _ ->
-            {build_wall(Grid), again}
+turn(Grid, Score) ->
+    Klaar = game_over(Grid),
+    if
+        Klaar ->
+            io:fwrite("    Board is full...~n"),
+            {Grid, Score};
+        true ->
+            case get_completable_wall(Grid) of
+                [] ->
+                    New_grid = build_wall(Grid),
+                    io:fwrite("    Placed a wall, result:~n"),
+                    print_grid(New_grid),
+                    {New_grid, Score + 1};
+                _ ->
+                    New_grid = build_wall(Grid),
+                    io:fwrite("    Placed a wall, result:~n"),
+                    print_grid(New_grid),
+                    io:fwrite("    Finished a room, taking another turn...~n"),
+                    turn( New_grid, Score + 1)
+                end
     end.
 
 % Starts with an empty board. Default board is 6 x 6.
-start_link() ->
-    start_link({{6, 6, []}, []}).
 
-% Start a gen_server with a preconfigured board.
-start_link(Rooms) ->
-    gen_server:start_link({local, rrr}, rooms, Rooms, []).
+player_process(Name, Other_player, Score) ->
 
-stop_link(Rooms) ->
-    gen_server:call(Rooms, terminate).
+    receive
+        {build, Grid} ->
+            io:format("---------~s--------------------------~n", [Name]),
+            io:format("~s score: ~w~n~n", [Name, Score]),
+             Klaar = game_over(Grid),
+             if
+                 Klaar ->
+                     io:format("~s Board is full. I'm quitting.~n", [Name]),
+                     io:format("---------~s--------------------------~n~n~n~n",
+                               [Name]),
+                     timer:send_after(100, Other_player, stop);
+                 true ->
+                     {New_grid, New_score} = turn(Grid, Score),
+                     io:format("~s new score: ~w~n", [Name, New_score]),
+                     io:format("---------~s--------------------------~n~n~n~n",
+                               [Name]),
+                     timer:send_after(100, Other_player, {build, New_grid}),
+                     player_process(Name, Other_player, New_score)
+                 end;
+        stop ->
+                io:format("---------~s--------------------------~n", [Name]),
+                io:format("~s score: ~w~n", [Name, Score]),
+                io:format("I'm quitting. ~s~n", [Name]),
+                io:format("---------~s--------------------------~n~n~n~n",
+                          [Name])
+    end.
 
-init(Rooms) -> {ok, Rooms}.
 
-restart() ->
-    restart(6, 6, []).
-
-restart(X, Y, Walls) ->
-    gen_server:stop(rrr),
-    start_link({{X, Y, Walls}, []}).
-
-handle_call(read, _From, State) ->
-    {reply, State, State};
-
-handle_call(terminate, _From, State) ->
-    {stop, normal, ok, State}.
-
-handle_cast({write, T} , {{N, M, List}, P}) ->
-    {noreply, {{N, M, List ++ [T]}, P}};
-
-handle_cast(restart, _State) ->
-    {noreply, []}.
-
-terminate(normal, _) ->
-    ok.
-
-code_change(_Old, State, _Extra) ->
-    {ok, State}.
+start_game(M, N) ->
+    P1 = spawn(?MODULE, player_process, [player_1, player_2, 0]),
+    P2 = spawn(?MODULE, player_process, [player_2, player_1, 0]),
+    Name1 = player_1,
+    Name2 = player_2,
+    register(Name1, P1),
+    register(Name2, P2),
+    Grid = new_grid(M,N),
+    io:fwrite("---------------------------------------------------------~n"),
+    io:fwrite("Starting a game...~n"),
+    io:fwrite("---------------------------------------------------------~n~n"),
+    P1 ! {build, Grid}.
