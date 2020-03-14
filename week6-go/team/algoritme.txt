@@ -1,0 +1,66 @@
+voor een hokje maze[row, col] geldt:
+maze[row,col] = 0 -> geen muur naar zuid en oost
+maze[row,col] = 1 -> muur aan de zuidkant
+maze[row,col] = 2 -> muur aan de oostkant
+maze[row,col] = 3 -> muur aan zuidkant en oostkant
+
+Hoe weet je of een hokje een muur aan de noordkant heeft?
+Dan geldt:
+maze[row-1,col] = 1 of 3
+
+Muur aan de westkant:
+maze[row,col-1] = 2 of 3
+
+
+
+
+Deze functie checkt voor een hokje maze[row,col] alleen in welke richtingen
+geen muur staat.
+check_step(maze, row, col):
+    richtingen = []
+    if maze[row,col] == 0:
+        richtingen.append([row+1, col]) // we kunnen naar zuid
+        richtingen.append([row, col+1]) // we kunnen naar oost
+    if maze[row,col] == 1:
+        richtingen.append([row, col+1]) // we kunnen naar oost
+    if maze[row,col] == 2:
+        richtingen.append([row+1, col]) // we kunnen naar zuid
+    if maze[row-1,col] == 0 of 2:
+        richtingen.append([row-1, col]) // we kunnen naar noord
+    if maze[row,col-1] == 0 of 1:
+        richtingen.append([row, col-1]) // we kunnen naar west
+
+    return richtingen
+
+    Wat er nog bij zou kunnen is dat als je row of col = 0, dat
+    je dan niet naar noord of west kan.
+
+
+
+
+de hoofdfunctie moet zoiets als dit doen:
+
+solve_maze:
+
+    gewandeld = matrix van dezelfde grootte als maze, maar met overal een 0
+    (dat betekent: nog niet in dit hokje geweest).
+    gewandeld[0,0] = 1 (dus in dit hokje zijn we wel geweest)
+    locatie = (0,0)
+
+    maak een nieuwe stack/channel, en leg bovenop: {gewandeld, locatie}
+
+
+
+    while de stack niet leeg is/ het kanaal open is:
+        current gewandeld, current_locatie = neem de bovenste item van de stack
+        richtingen = check_step(maze, current_locatie)
+
+        for elke richting in richtingen:
+            if gewandeld[richting] == 0:
+                nieuw_gewandeld = kopie(current_gewandeld)
+                nieuw_gewandeld[richting] = 1
+
+                if richting == doel_locatie (nog even vaststellen hoe):
+                    return nieuw_gewandeld (dit is je route)
+                else:
+                    voeg achteraan de stack toe {nieuw_gewandeld, richting
