@@ -40,7 +40,7 @@ check_step(maze, row, col):
 
 de hoofdfunctie moet zoiets als dit doen:
 
-solve_maze:
+solve_maze(maze):
 
     gewandeld = matrix van dezelfde grootte als maze, maar met overal een 0
     (dat betekent: nog niet in dit hokje geweest).

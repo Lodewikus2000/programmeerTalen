@@ -44,17 +44,8 @@ func readMaze(f *os.File) (maze Maze, err error) {
 }
 
 func solve(maze Maze) (route []Position) {
-	var onceMaze [][]sync.Once
+	fmt.Println(maze)
 
-	// Initialize a channel for communication with goroutines
-	// No functional dependency on the size of a buffer is allowed
-    communicate := make(chan []byte)
-
-	// Initialize onceMaze and use it to limit each cell to a single visit
-    onceMaze := Maze
-    start := {0, 0}
-	// Start the exploration of the maze in a goroutine at position {0, 0}
-    no
 	// Receive messages from the goroutines and spawn new ones as needed
 	// Do not spawn new goroutines if a way out of the maze has been found
 	// Stop receiving only when no more exploration goroutines are running
@@ -62,8 +53,26 @@ func solve(maze Maze) (route []Position) {
     return route
 }
 
-func step() {
+func step(maze Maze, position Position) {
+	richtingen := make(chan []Position)
 
+	row int = Position.Row
+	col int = Position.Col
+	if maze[row, col] == 0:
+        richtingen <- Position{row + 1, col} // we kunnen naar zuid
+        richtingen <- Position{row, col + 1} // we kunnen naar oost
+    else if maze[row, col] == 1:
+        richtingen <- Position{row, col + 1} // we kunnen naar oost
+    else if maze[row, col] == 2:
+        richtingen <- Position{row + 1, col} // we kunnen naar zuid
+
+    if maze[row - 1, col] == 0 of 2:
+        richtingen <- Position{row - 1, col} // we kunnen naar noord
+    if maze[row, col -1] == 0 of 1:
+        richtingen <- Position{row, col - 1} // we kunnen naar west
+
+	close(richtingen)
+	return richtingen
 }
 
 func main() {
