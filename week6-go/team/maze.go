@@ -46,7 +46,6 @@ func readMaze(f *os.File) (maze Maze, err error) {
 
 func solve(maze Maze, goal Position) (route []Position, err error) {
 
-	var new_route []Position
 	// initialize 2D onceMaze of equivalent size as the input maze
 	var onceMaze = make([][]sync.Once, len(maze) + 1)
 	for i := range onceMaze {
@@ -95,13 +94,15 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 
 			for richting := range richtingen {
 
+
+				new_route := route
 				copy(new_route, route)
 				new_route = append(new_route, richting)
-				fmt.Println(new_route, route)
-				// return route, nil
-
-				routes <- new_route
-
+				fmt.Println("route", route)
+				fmt.Println(new_route)
+				if len(route) + 1 == len(new_route) {
+					routes <- new_route
+				}
 			}
 
 		} else {
@@ -128,7 +129,6 @@ func step(once [][]sync.Once, maze Maze, position Position,
 	once[row][col].Do(func() {
 		// Add to possible direction to the channel
 
-
 		pos := maze[row][col]
 
 		// fmt.Println("exploring", row, col)
@@ -142,35 +142,35 @@ func step(once [][]sync.Once, maze Maze, position Position,
 
 		case pos & noWall == 0:
 
-			if col < boundsc && !visited[right] {
+			if col < boundsc && visited[right] == false {
 				richtingen <- right
 			}
 
-			if row < boundsr && !visited[down] {
+			if row < boundsr && visited[down] == false {
 				richtingen <- down
 			}
 
 		case pos & eastWall != 0:
 
-			if col < boundsr && !visited[right] {
+			if col < boundsr && visited[right] == false {
 				richtingen <- right
 			}
 
 		case pos & southWall != 0:
 
-			if col < boundsr && !visited[down] {
+			if col < boundsr && visited[down] == false {
 				richtingen <- down
 			}
 		}
 
 		if row != 0 {
-			if maze[row - 1][col] & southWall != 0 && !visited[up] {
+			if maze[row - 1][col] & southWall != 0 && visited[up] == false {
 				richtingen <- up
 			}
 		}
 
 		if col != 0 {
-			if maze[row][col - 1] & eastWall != 0 && !visited[left] {
+			if maze[row][col - 1] & eastWall != 0 && visited[left] == false {
 				richtingen <- left
 			}
 		}
