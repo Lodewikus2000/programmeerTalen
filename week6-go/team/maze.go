@@ -58,7 +58,7 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 	routes := make(chan []Position)
 
 	// start the exploration at {0, 0}
-	explorestart := make([]Position, 0)
+	explorestart := [...]Position {Position{0, 0}
 	explorestart = append(explorestart, Position{0, 0})
 
 	// add the first route to the stack
