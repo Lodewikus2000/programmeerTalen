@@ -124,47 +124,46 @@ func step(once [][]sync.Once, maze Maze, position Position,
 		// Add to possible direction to the channel
 		switch {
 
-		case maze[row][col] & noWall == 0:
-			if row != boundsr {
-				richtingen <- Position{row + 1, col}
-			}
-
+		case maze[col][row] & noWall == 0:
 			if col != boundsc {
-				richtingen <- Position{row, col + 1}
+				richtingen <- Position{col + 1, row}
 			}
 
-
-		case maze[row][col] & southWall != 0:
-			if col != boundsc {
-				richtingen <- Position{row, col + 1}
-			}
-
-
-		case maze[row][col] & eastWall != 0:
 			if row != boundsr {
-				richtingen <- Position{row + 1, col}
+				richtingen <- Position{col, row + 1}
+			}
+
+
+		case maze[col][row] & southWall != 0:
+			if row != boundsr {
+				richtingen <- Position{col, row + 1}
+			}
+
+
+		case maze[col][row] & eastWall != 0:
+			if col != boundsc {
+				richtingen <- Position{col + 1, row}
+			}
+		}
+
+		if row != 0 {
+			switch {
+			case maze[col][row - 1] & noWall == 0:
+				richtingen <- Position{col, row - 1}
+
+			case maze[col][row - 1] & eastWall != 0:
+				richtingen <- Position{col, row - 1}
 			}
 		}
 
 		if col != 0 {
 
 			switch {
-			case maze[row][col - 1] & noWall == 0:
-				richtingen <- Position{row, col - 1}
+			case maze[col - 1][row] & noWall == 0:
+				richtingen <- Position{col - 1, row}
 
-			case maze[row][col - 1] & eastWall != 0:
-				richtingen <- Position{row, col - 1}
-			}
-		}
-
-		if row != 0 {
-
-			switch {
-			case maze[row - 1][col] & noWall == 0:
-				richtingen <- Position{row - 1, col}
-
-			case  maze[row - 1][col] & eastWall != 0:
-				richtingen <- Position{row - 1, col}
+			case  maze[col - 1][row] & eastWall != 0:
+				richtingen <- Position{col - 1, row}
 			}
 		}
 	})
