@@ -65,12 +65,12 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 
 		// Get the route to further explore
 		route, more := <- routes
-		fmt.Println(more)
-		fmt.Println(route)
+		// fmt.Println(more)
+		// fmt.Println(route)
 
 		// get the last explored coordinate
 		lastexplored := route[len(route) - 1]
-		fmt.Println(lastexplored)
+
 
 		// stop if we found the goal
 		if lastexplored == goal {
@@ -87,7 +87,7 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 
 				copy(new_route, route)
 				new_route = append(new_route, richting)
-				fmt.Println(new_route)
+				// fmt.Println(new_route)
 				routes <- new_route
 
 			}
@@ -108,65 +108,98 @@ func step(once [][]sync.Once, maze Maze, position Position,
 	col := position.Col
 	row := position.Row
 
-	boundsr := len(maze[0]) - 1
-	boundsc := len(maze) - 1
+	boundsc := len(maze[0]) - 1
+	boundsr := len(maze) - 1
 
-	fmt.Println(boundsr)
-	fmt.Println(boundsc)
+	// fmt.Println("bounds row:", boundsr)
+	// fmt.Println("bounds col:", boundsc)
 
-	fmt.Println(col)
-	fmt.Println(row)
+	// fmt.Println("row: ", row, "col: ", col)
+
 
 	// zie hier: https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f
 
-	once[col][row].Do(func() {
-
+	once[row][col].Do(func() {
+		// fmt.Println("Row: ", row, " Col: ", col)
 		// Add to possible direction to the channel
-		switch {
 
-		case maze[row][col] & noWall == 0:
-			if row != boundsr {
-				richtingen <- Position{row + 1, col}
-			}
-
-			if col != boundsc {
-				richtingen <- Position{row, col + 1}
-			}
-
-
-		case maze[row][col] & southWall != 0:
-			if col != boundsc {
-				richtingen <- Position{row, col + 1}
-			}
-
-
-		case maze[row][col] & eastWall != 0:
-			if row != boundsr {
-				richtingen <- Position{row + 1, col}
-			}
-		}
-
-		if col != 0 {
-
+		if col >= boundsc {
 			switch {
-			case maze[row][col - 1] & noWall == 0:
-				richtingen <- Position{row, col - 1}
+				case maze[row][col] & noWall == 0:
+					richtingen <- Position{row + 1, col}
+					fmt.Println("van", row, col, " stapje naar ", row + 1, col)
 
-			case maze[row][col - 1] & eastWall != 0:
-				richtingen <- Position{row, col - 1}
+				case maze[row][col] & eastWall != 0:
+						richtingen <- Position{row + 1, col}
+						fmt.Println("van", row, col, " stapje naar ", row + 1, col)
+
+				case maze[row - 1 ][col] & southWall != 0:
+						richtingen <- Position{row - 1, col}
+						fmt.Println("van", row, col, " stapje naar ", row - 1, col)
+
+				case maze[row][col - 1] & eastWall != 0:
+						richtingen <- Position{row, col - 1}
+						fmt.Println("van", row, col, " stapje naar ", row, col - 1)
+
 			}
-		}
-
-		if row != 0 {
-
+		} else if row >= boundsr {
 			switch {
-			case maze[row - 1][col] & noWall == 0:
-				richtingen <- Position{row - 1, col}
+				case maze[row][col] & noWall == 0:
+						richtingen <- Position{row, col + 1}
+						fmt.Println("van", row, col, " stapje naar ", row, col+1)
 
-			case  maze[row - 1][col] & eastWall != 0:
-				richtingen <- Position{row - 1, col}
+				case maze[row][col] & southWall != 0:
+						richtingen <- Position{row, col + 1}
+						fmt.Println("van", row, col, " stapje naar ", row , col+1)
+
+				case maze[row - 1 ][col] & southWall != 0:
+						richtingen <- Position{row - 1, col}
+						fmt.Println("van", row, col, " stapje naar ", row - 1, col)
+
+				case maze[row][col - 1] & eastWall != 0:
+						richtingen <- Position{row, col - 1}
+						fmt.Println("van", row, col, " stapje naar ", row, col - 1)
+
+			}
+		} else {
+			switch {
+				case maze[row][col] & noWall == 0:
+
+						richtingen <- Position{row + 1, col}
+						fmt.Println("van", row, col, " stapje naar ", row + 1, col)
+
+
+						richtingen <- Position{row, col + 1}
+						fmt.Println("van", row, col, " stapje naar ", row , col+1)
+
+
+				case maze[row][col] & southWall != 0:
+
+						richtingen <- Position{row, col + 1}
+						fmt.Println("van", row, col, " stapje naar ", row , col+1)
+
+
+				case maze[row][col] & eastWall != 0:
+
+						richtingen <- Position{row + 1, col}
+						fmt.Println("van", row, col, " stapje naar ", row + 1, col)
+
+
+				case maze[row - 1 ][col] & southWall != 0:
+						richtingen <- Position{row - 1, col}
+						fmt.Println("van", row, col, " stapje naar ", row - 1, col)
+
+				case maze[row][col - 1] & eastWall != 0:
+						richtingen <- Position{row, col - 1}
+						fmt.Println("van", row, col, " stapje naar ", row, col - 1)
+						fmt.Println("NAAR HET OOOOOOSTEN")
+
 			}
 		}
+
+
+
+
 	})
 
 	close(richtingen)
