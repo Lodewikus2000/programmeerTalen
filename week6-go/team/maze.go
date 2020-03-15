@@ -44,64 +44,60 @@ func readMaze(f *os.File) (maze Maze, err error) {
 	return maze, nil
 }
 
-func solve(maze Maze, goal Position) (route []Position) {
+func solve(maze Maze, goal Position) (route []Position, err error) {
 
-	fmt.Println(maze)
 
-	// initialize 2D onceMaze of equivalant size as the input maze
-	// https://stackoverflow.com/questions/23869717/initialize-a-2d-dynamic-array-in-go
+	// initialize 2D onceMaze of equivalent size as the input maze
 	var onceMaze = make([][]sync.Once, len(maze))
-
 	for i := range onceMaze {
     	onceMaze[i] = make([]sync.Once, len(maze[0]))
 	}
 
+	limit := 100
 	// routes
 	routes := make(chan []Position)
 
 	// start the exploration at {0, 0}
-	explorestart := make([]Position, 1)
+	explorestart := make([]Position, 0)
 	explorestart = append(explorestart, Position{0, 0})
 
 	// add the first route to the stack
 	routes <- explorestart
 
-	for {
+	for i := 0; i < limit; i++ {
 
 		// Get the route to further explore
-		route := <- routes
+		route, more := <- routes
+		fmt.Println(route)
 
 		// get the last explored coordinate
 		lastexplored := route[len(route) - 1]
 
 		// stop if we found the goal
 		if lastexplored == goal {
-			return route
+			close(routes)
+			return route, nil
 		}
 
-		richtingen := make(chan Position)
-		go step(onceMaze, maze, lastexplored, richtingen)
+		if more {
 
-		for richting := range richtingen {
-			routes <- append(route, richting)
-	    }
+			richtingen := make(chan Position)
+			go step(onceMaze, maze, lastexplored, richtingen)
+
+			for richting := range richtingen {
+
+				new_route := append(route, richting)
+				routes <- new_route
+		    }
+
+		} else {
+			close(routes)
+	        return nil, errors.New("incorrect input given, exiting.")
+		}
 	}
 
-    // while de stack niet leeg is/ het kanaal open is:
-    //     current gewandeld, current_locatie = neem de bovenste item van de stack
-    //     richtingen = check_step(maze, current_locatie)
-	//
-    //     for elke richting in richtingen:
-    //         if gewandeld[richting] == 0:
-    //             nieuw_gewandeld = kopie(current_gewandeld)
-    //             nieuw_gewandeld[richting] = 1
-	//
-    //             if richting == doel_locatie (nog even vaststellen hoe):
-    //                 return nieuw_gewandeld (dit is je route)
-    //             else:
-    //                 voeg achteraan de stack toe {nieuw_gewandeld, richting
-
-    return route
+	close(routes)
+	return nil,  errors.New("incorrect input given, exiting.")
 }
 
 func step(once [][]sync.Once, maze Maze, position Position, richtingen chan Position) {
@@ -163,12 +159,18 @@ func main() {
 
 	goal := Position {len(maze), len(maze[0])}
 
-	for _, pos := range solve(maze, goal) {
+	route, maze_error := solve(maze, goal)
+
+	if maze_error != nil {
+		fmt.Println(maze_error)
+		os.Exit(4)
+	}
+
+	for _, pos := range route {
 		maze[pos.Row][pos.Col] |= (1 << 2) // The third flag
 	}
 
 	for _, line := range maze {
-		// TODO: handle errors
 		fmt.Println(string(line))
 	}
 }
