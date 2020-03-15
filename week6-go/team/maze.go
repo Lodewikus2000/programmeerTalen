@@ -53,18 +53,15 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
     	onceMaze[i] = make([]sync.Once, len(maze[0]))
 	}
 
-	limit := 100
 	// routes
-	routes := make(chan []Position)
+	routes := make(chan []Position, 200)
 
-	// start the exploration at {0, 0}
-	explorestart := [...]Position {Position{0, 0}
-	explorestart = append(explorestart, Position{0, 0})
+	startexplore := make([]Position, 0)
+	startexplore = append(startexplore, Position{0, 0})
 
-	// add the first route to the stack
-	routes <- explorestart
+	routes <- startexplore
 
-	for i := 0; i < limit; i++ {
+	for {
 
 		// Get the route to further explore
 		route, more := <- routes
@@ -124,12 +121,29 @@ func step(once [][]sync.Once, maze Maze, position Position, richtingen chan Posi
 			// there are no other cases (so no default required)
 		}
 
-	    // if maze[row - 1, col] == 0 or maze[row -1, col] == 2 {
-		// 	richtingen <- Position{row - 1, col} // we kunnen naar noord
-		// }
-	    // else if maze[row, col -1] == 0 or maze[row, col - 1] == 1 {
-		// 	richtingen <- Position{row, col - 1} // we kunnen naar west
-		// }
+		if col != 0 {
+			switch maze[row][col - 1] {
+
+				case noWall:
+					richtingen <- Position{row, col - 1}
+
+				case eastWall:
+					richtingen <- Position{row, col - 1}
+
+			}
+		}
+
+		if row != 0 {
+			switch maze[row - 1][col] {
+
+				case noWall:
+					richtingen <- Position{row - 1, col}
+
+				case eastWall:
+					richtingen <- Position{row - 1, col}
+
+			}
+		}
 
 		close(richtingen)
 		return

@@ -12,7 +12,7 @@ func main() {
     // nu gebeurt het 10x, want het is een dubbele array
     var once = make([][]sync.Once, 11)
     for i := range once {
-    	once[i] =  make([]sync.Once, 11)
+    	once[i] = make([]sync.Once, 11)
 	}
 
 	onceBody := func() {
@@ -30,7 +30,9 @@ func main() {
     	}
     }
 
-	for i := 0; i < 10; i++ {
-		<-done
-	}
+    for j := 0; j < 10; j++ {
+    	for i := 0; i < 10; i++ {
+    		<-done
+    	}
+    }
 }

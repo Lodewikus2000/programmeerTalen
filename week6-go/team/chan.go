@@ -20,7 +20,8 @@ func main() {
         The compiler can identify the length of an array,
         based on the elements specified in the array declaration.
      */
-	explorestart := [...]Position {Position{0, 0}}
+
+	explorestart := []Position {Position{0, 0}}
 
     fmt.Println(explorestart)
 
