@@ -48,27 +48,25 @@ func solve(maze Maze, goal Position) (route []Position) {
 
 	fmt.Println(maze)
 
-	// fill once mace with correct amount of zeros??
-	var onceMaze [][]sync.Once = make([][]int, len(maze))
-	for i := range mat {
-	    onceMaze[i] = make([]int, len(maze[0]))
+	// initialize 2D onceMaze of equivalant size as the input maze
+	// https://stackoverflow.com/questions/23869717/initialize-a-2d-dynamic-array-in-go
+	var onceMaze = make([][]sync.Once, len(maze))
+
+	for i := range onceMaze {
+    	onceMaze[i] = make([]sync.Once, len(maze[0]))
 	}
 
 	// routes
 	routes := make(chan []Position)
 
 	// start the exploration at {0, 0}
-	var explorestart [1]Position = Position{0, 0}
+	explorestart := make([]Position, 1)
+	explorestart = append(explorestart, Position{0, 0})
 
 	// add the first route to the stack
 	routes <- explorestart
 
 	for {
-
-		// gewandeld = matrix van dezelfde grootte als maze, maar met overal een 0
-	    // (dat betekent: nog niet in dit hokje geweest).
-	    // gewandeld[0,0] = 1 (dus in dit hokje zijn we wel geweest)
-	    // locatie = (0,0)
 
 		// Get the route to further explore
 		route := <- routes
@@ -82,7 +80,7 @@ func solve(maze Maze, goal Position) (route []Position) {
 		}
 
 		richtingen := make(chan Position)
-		go step(onceMaze, lastexplored, richtingen)
+		go step(onceMaze, maze, lastexplored, richtingen)
 
 		for richting := range richtingen {
 			routes <- append(route, richting)
@@ -106,36 +104,40 @@ func solve(maze Maze, goal Position) (route []Position) {
     return route
 }
 
-func step(maze Maze, position Position, richtingen chan Position) {
+func step(once [][]sync.Once, maze Maze, position Position, richtingen chan Position) {
 
-	row := position.Row
 	col := position.Col
+	row := position.Row
 
-	// Add to possible direction to the channel
-	switch maze[row][col] {
+	// zie hier: https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f
 
-		case noWall:
-			richtingen <- Position{row + 1, col}
-	        richtingen <- Position{row, col + 1}
+	once[col][row].Do(func() {
+		// Add to possible direction to the channel
+		switch maze[row][col] {
 
-		case southWall:
-			richtingen <- Position{row, col + 1}
+			case noWall:
+				richtingen <- Position{row + 1, col}
+		        richtingen <- Position{row, col + 1}
 
-		case eastWall:
-			richtingen <- Position{row + 1, col}
+			case southWall:
+				richtingen <- Position{row, col + 1}
 
-		// there are no other cases (so no default required)
-	}
+			case eastWall:
+				richtingen <- Position{row + 1, col}
 
-    // if maze[row - 1, col] == 0 or maze[row -1, col] == 2 {
-	// 	richtingen <- Position{row - 1, col} // we kunnen naar noord
-	// }
-    // else if maze[row, col -1] == 0 or maze[row, col - 1] == 1 {
-	// 	richtingen <- Position{row, col - 1} // we kunnen naar west
-	// }
+			// there are no other cases (so no default required)
+		}
 
-	close(richtingen)
-	return
+	    // if maze[row - 1, col] == 0 or maze[row -1, col] == 2 {
+		// 	richtingen <- Position{row - 1, col} // we kunnen naar noord
+		// }
+	    // else if maze[row, col -1] == 0 or maze[row, col - 1] == 1 {
+		// 	richtingen <- Position{row, col - 1} // we kunnen naar west
+		// }
+
+		close(richtingen)
+		return
+	})
 }
 
 func main() {
