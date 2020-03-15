@@ -65,29 +65,41 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 
 		// Get the route to further explore
 		route, more := <- routes
-		fmt.Println(more)
+
 		fmt.Println(route)
 
 		// get the last explored coordinate
 		lastexplored := route[len(route) - 1]
-		fmt.Println(lastexplored)
 
 		// stop if we found the goal
 		if lastexplored == goal {
+
 			close(routes)
+			fmt.Println("this is the route", route)
 			return route, nil
 		}
 
 		if more {
+
+			visited := make(map[Position]bool)
+
+			for _, elem := range route {
+				visited[elem] = true
+			}
+
+			// fmt.Println(visited)
+
 			richtingen := make(chan Position)
 
-			go step(onceMaze, maze, lastexplored, richtingen)
+			go step(onceMaze, maze, lastexplored, visited, richtingen)
 
 			for richting := range richtingen {
 
 				copy(new_route, route)
 				new_route = append(new_route, richting)
-				fmt.Println(new_route)
+				fmt.Println(new_route, route)
+				// return route, nil
+
 				routes <- new_route
 
 			}
@@ -103,67 +115,63 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 }
 
 func step(once [][]sync.Once, maze Maze, position Position,
-		  richtingen chan Position) {
+		  visited map[Position]bool, richtingen chan Position) {
 
-	col := position.Col
 	row := position.Row
+	col := position.Col
 
-	boundsr := len(maze[0]) - 1
-	boundsc := len(maze) - 1
-
-	fmt.Println(boundsr)
-	fmt.Println(boundsc)
-
-	fmt.Println(col)
-	fmt.Println(row)
+	boundsr := len(maze) - 1
+	boundsc := len(maze[0]) - 1
 
 	// zie hier: https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f
 
-	once[col][row].Do(func() {
-
+	once[row][col].Do(func() {
 		// Add to possible direction to the channel
+
+
+		pos := maze[row][col]
+
+		// fmt.Println("exploring", row, col)
+
+		up := Position{row - 1, col}
+		left := Position{row, col - 1}
+		right := Position{row, col + 1}
+		down :=  Position{row + 1, col}
+
 		switch {
 
-		case maze[col][row] & noWall == 0:
-			if col != boundsc {
-				richtingen <- Position{col + 1, row}
+		case pos & noWall == 0:
+
+			if col < boundsc && !visited[right] {
+				richtingen <- right
 			}
 
-			if row != boundsr {
-				richtingen <- Position{col, row + 1}
+			if row < boundsr && !visited[down] {
+				richtingen <- down
 			}
 
+		case pos & eastWall != 0:
 
-		case maze[col][row] & southWall != 0:
-			if row != boundsr {
-				richtingen <- Position{col, row + 1}
+			if col < boundsr && !visited[right] {
+				richtingen <- right
 			}
 
+		case pos & southWall != 0:
 
-		case maze[col][row] & eastWall != 0:
-			if col != boundsc {
-				richtingen <- Position{col + 1, row}
+			if col < boundsr && !visited[down] {
+				richtingen <- down
 			}
 		}
 
 		if row != 0 {
-			switch {
-			case maze[col][row - 1] & noWall == 0:
-				richtingen <- Position{col, row - 1}
-
-			case maze[col][row - 1] & eastWall != 0:
-				richtingen <- Position{col, row - 1}
+			if maze[row - 1][col] & southWall != 0 && !visited[up] {
+				richtingen <- up
 			}
 		}
 
 		if col != 0 {
-
-			switch {
-			case maze[col - 1][row] & noWall == 0:
-				richtingen <- Position{col - 1, row}
-
-			case  maze[col - 1][row] & eastWall != 0:
-				richtingen <- Position{col - 1, row}
+			if maze[row][col - 1] & eastWall != 0 && !visited[left] {
+				richtingen <- left
 			}
 		}
 	})
@@ -199,6 +207,10 @@ func main() {
 		fmt.Println(maze_error)
 		os.Exit(4)
 	}
+
+	// for _, pos := range route {
+	// 	fmt.Println(pos)
+	// }
 
 	for _, pos := range route {
 		maze[pos.Row][pos.Col] |= (1 << 2) // The third flag
