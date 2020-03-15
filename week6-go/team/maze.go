@@ -46,11 +46,11 @@ func readMaze(f *os.File) (maze Maze, err error) {
 
 func solve(maze Maze, goal Position) (route []Position, err error) {
 
-
+	var new_route []Position
 	// initialize 2D onceMaze of equivalent size as the input maze
-	var onceMaze = make([][]sync.Once, len(maze))
+	var onceMaze = make([][]sync.Once, len(maze) + 1)
 	for i := range onceMaze {
-    	onceMaze[i] = make([]sync.Once, len(maze[0]))
+    	onceMaze[i] = make([]sync.Once, len(maze[0]) + 1)
 	}
 
 	// routes
@@ -65,10 +65,12 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 
 		// Get the route to further explore
 		route, more := <- routes
+		fmt.Println(more)
 		fmt.Println(route)
 
 		// get the last explored coordinate
 		lastexplored := route[len(route) - 1]
+		fmt.Println(lastexplored)
 
 		// stop if we found the goal
 		if lastexplored == goal {
@@ -77,15 +79,18 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 		}
 
 		if more {
-
 			richtingen := make(chan Position)
+
 			go step(onceMaze, maze, lastexplored, richtingen)
 
 			for richting := range richtingen {
 
-				new_route := append(route, richting)
+				copy(new_route, route)
+				new_route = append(new_route, richting)
+				fmt.Println(new_route)
 				routes <- new_route
-		    }
+				
+			}
 
 		} else {
 			close(routes)
@@ -97,7 +102,8 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 	return nil,  errors.New("incorrect input given, exiting.")
 }
 
-func step(once [][]sync.Once, maze Maze, position Position, richtingen chan Position) {
+func step(once [][]sync.Once, maze Maze, position Position,
+		  richtingen chan Position) {
 
 	col := position.Col
 	row := position.Row
@@ -105,49 +111,46 @@ func step(once [][]sync.Once, maze Maze, position Position, richtingen chan Posi
 	// zie hier: https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f
 
 	once[col][row].Do(func() {
+
 		// Add to possible direction to the channel
-		switch maze[row][col] {
+		if maze[row][col] & noWall == 0 {
+			richtingen <- Position{row + 1, col}
+			richtingen <- Position{row, col + 1}
+		}
 
-			case noWall:
-				richtingen <- Position{row + 1, col}
-		        richtingen <- Position{row, col + 1}
+		if maze[row][col] & southWall != 0 {
+			richtingen <- Position{row, col + 1}
+		}
 
-			case southWall:
-				richtingen <- Position{row, col + 1}
-
-			case eastWall:
-				richtingen <- Position{row + 1, col}
-
-			// there are no other cases (so no default required)
+		if maze[row][col] & eastWall != 0 {
+			richtingen <- Position{row + 1, col}
 		}
 
 		if col != 0 {
-			switch maze[row][col - 1] {
+			if maze[row][col - 1] & noWall == 0 {
+				richtingen <- Position{row, col - 1}
+			}
 
-				case noWall:
-					richtingen <- Position{row, col - 1}
-
-				case eastWall:
-					richtingen <- Position{row, col - 1}
-
+			if maze[row][col - 1] & eastWall != 0 {
+				richtingen <- Position{row, col - 1}
 			}
 		}
 
 		if row != 0 {
-			switch maze[row - 1][col] {
 
-				case noWall:
-					richtingen <- Position{row - 1, col}
+			if maze[row - 1][col] & noWall == 0 {
+				richtingen <- Position{row - 1, col}
 
-				case eastWall:
-					richtingen <- Position{row - 1, col}
+			}
+
+			if maze[row - 1][col] & eastWall != 0 {
+				richtingen <- Position{row - 1, col}
 
 			}
 		}
-
-		close(richtingen)
-		return
 	})
+
+	close(richtingen)
 }
 
 func main() {
@@ -172,7 +175,6 @@ func main() {
 	}
 
 	goal := Position {len(maze), len(maze[0])}
-
 	route, maze_error := solve(maze, goal)
 
 	if maze_error != nil {
