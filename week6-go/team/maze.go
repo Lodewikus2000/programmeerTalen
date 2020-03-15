@@ -64,8 +64,12 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 
 	for {
 
+
+
 		// Get the route to further explore
 		route, more := <- routes
+
+		fmt.Println(route)
 
 		// get the last explored coordinate
 		lastexplored := route[len(route) - 1]
@@ -121,10 +125,7 @@ func step(once [][]sync.Once, maze Maze, position Position,
 
 		var pos byte = byte(maze[row][col])
 
-		fmt.Println(byte(pos))
-		fmt.Println(noWall)
-		fmt.Println(southWall)
-		fmt.Println(eastWall)
+
 
 		up := Position{row - 1, col}
 		left := Position{row, col - 1}
@@ -133,7 +134,7 @@ func step(once [][]sync.Once, maze Maze, position Position,
 
 		switch {
 
-		case (pos ^ noWall) == 0:
+		case pos == 48:
 			if col < boundsc && visited[right] == false {
 				richtingen <- right
 			}
@@ -142,13 +143,13 @@ func step(once [][]sync.Once, maze Maze, position Position,
 				richtingen <- down
 			}
 
-		case (pos ^ eastWall) == 0:
+		case pos == 49:
 
 			if col < boundsr && visited[right] == false {
 				richtingen <- right
 			}
 
-		case (pos ^ southWall) == 0:
+		case pos == 50:
 
 			if col < boundsr && visited[down] == false {
 				richtingen <- down
@@ -159,13 +160,13 @@ func step(once [][]sync.Once, maze Maze, position Position,
 		}
 
 		if row != 0 {
-			if maze[row - 1][col] & southWall != 0 && visited[up] == false {
+			if ((maze[row - 1][col] == 48) || (maze[row - 1][col] == 50)) && visited[up] == false {
 				richtingen <- up
 			}
 		}
 
 		if col != 0 {
-			if maze[row][col - 1] & eastWall != 0 && visited[left] == false {
+			if ((maze[row][col - 1]) == 48 || (maze[row][col - 1] == 49)) && visited[left] == false {
 				richtingen <- left
 			}
 		}
