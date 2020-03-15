@@ -8,7 +8,7 @@ import (
     "errors"
 )
 
-const noWall byte = (0 << 0) // The first flag
+const noWall byte = (0) // The first flag
 const southWall byte = (1 << 0) // The first flag
 const eastWall byte = (1 << 1)  // The second flag
 
@@ -39,7 +39,9 @@ func readMaze(f *os.File) (maze Maze, err error) {
                 return nil, errors.New("incorrect input given, exiting.")
             }
         }
-		maze = append(maze, []byte(s.Text()))
+
+		byt := []byte(b)
+		maze = append(maze, byt)
 	}
 	return maze, nil
 }
@@ -65,8 +67,6 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 		// Get the route to further explore
 		route, more := <- routes
 
-		fmt.Println(route)
-
 		// get the last explored coordinate
 		lastexplored := route[len(route) - 1]
 
@@ -74,7 +74,6 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 		if lastexplored == goal {
 
 			close(routes)
-			fmt.Println("this is the route", route)
 			return route, nil
 		}
 
@@ -86,23 +85,15 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 				visited[elem] = true
 			}
 
-			// fmt.Println(visited)
-
 			richtingen := make(chan Position)
-
 			go step(onceMaze, maze, lastexplored, visited, richtingen)
 
 			for richting := range richtingen {
 
-
 				new_route := route
-				copy(new_route, route)
 				new_route = append(new_route, richting)
-				fmt.Println("route", route)
-				fmt.Println(new_route)
-				if len(route) + 1 == len(new_route) {
-					routes <- new_route
-				}
+
+				routes <- new_route
 			}
 
 		} else {
@@ -124,14 +115,16 @@ func step(once [][]sync.Once, maze Maze, position Position,
 	boundsr := len(maze) - 1
 	boundsc := len(maze[0]) - 1
 
-	// zie hier: https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f
 
 	once[row][col].Do(func() {
 		// Add to possible direction to the channel
 
-		pos := maze[row][col]
+		var pos byte = byte(maze[row][col])
 
-		// fmt.Println("exploring", row, col)
+		fmt.Println(byte(pos))
+		fmt.Println(noWall)
+		fmt.Println(southWall)
+		fmt.Println(eastWall)
 
 		up := Position{row - 1, col}
 		left := Position{row, col - 1}
@@ -140,8 +133,7 @@ func step(once [][]sync.Once, maze Maze, position Position,
 
 		switch {
 
-		case pos & noWall == 0:
-
+		case (pos ^ noWall) == 0:
 			if col < boundsc && visited[right] == false {
 				richtingen <- right
 			}
@@ -150,17 +142,20 @@ func step(once [][]sync.Once, maze Maze, position Position,
 				richtingen <- down
 			}
 
-		case pos & eastWall != 0:
+		case (pos ^ eastWall) == 0:
 
 			if col < boundsr && visited[right] == false {
 				richtingen <- right
 			}
 
-		case pos & southWall != 0:
+		case (pos ^ southWall) == 0:
 
 			if col < boundsr && visited[down] == false {
 				richtingen <- down
 			}
+
+		default:
+
 		}
 
 		if row != 0 {
@@ -208,12 +203,8 @@ func main() {
 		os.Exit(4)
 	}
 
-	// for _, pos := range route {
-	// 	fmt.Println(pos)
-	// }
-
 	for _, pos := range route {
-		maze[pos.Row][pos.Col] |= (1 << 2) // The third flag
+		maze[pos.Row][pos.Col] |= byte(1 << 2) // The third flag
 	}
 
 	for _, line := range maze {
