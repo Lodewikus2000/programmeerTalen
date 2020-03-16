@@ -12,6 +12,11 @@ const noWall byte = (0) // The first flag
 const southWall byte = (1 << 0) // The first flag
 const eastWall byte = (1 << 1)  // The second flag
 
+var initialize sync.Once
+
+var boundsr int
+var boundsc int
+
 type Maze struct {
 	walls [][]byte
 	cells [][]int
@@ -33,17 +38,15 @@ func readMaze(f *os.File) (maze Maze, err error) {
 
 	s := bufio.NewScanner(f)
 
-	var rows int
-	var cols int
+
 	var walls [][]byte
 	for s.Scan() {
 
-		cols ++
 
         b := s.Text()
         for _, bt := range b {
 
-			rows ++
+
             // the possible input runes are {0, 1, 2, 3} (48-51 in Unicode)
             if bt < 48 || bt > 51 {
                 return Maze{}, errors.New("incorrect input given, exiting.")
@@ -53,38 +56,52 @@ func readMaze(f *os.File) (maze Maze, err error) {
 		byt := []byte(b)
 		walls = append(walls, byt)
 	}
-	cells := make([][]int, rows)
+	cells := make([][]int, len(walls))
 	for i := range cells {
-		cells[i] = make([]int, cols)
+		cells[i] = make([]int, len(walls[0]))
 	}
 	maze = Maze{walls, cells, 0, 0}
+	fmt.Println("aantal rijen ", len(cells))
+	fmt.Println("aantal kolommen ", len(cells[0]))
 	return maze, nil
 }
 
+
+
 func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
 
-	const max_path_length int = 200
+
 	// initialize 2D onceMaze of equivalent size as the input maze
-	var onceMaze = make([][]sync.Once, len(maze.walls) + 1)
-	for i := range onceMaze {
-    	onceMaze[i] = make([]sync.Once, len(maze.walls[0]) + 1)
-	}
+
 
 	// routes
-	routes := make(chan Maze )
+	routes := make(chan Maze, 100)
 
+	var mazeHere Maze
+	mazeHere = maze
 	maze.cells[0][0] = 1
 
-	routes <- maze
+
+	routes <- mazeHere
 
 	for {
 
 
-
 		// Get the route to further explore
 		route, more := <- routes
+		// fmt.Println("\n",route.cells,"\n")
+		// fmt.Println("huidige route:")
+		// fmt.Println(route)
+		// fmt.Println("---------------------")
 
-		fmt.Println(route)
+		// for i, row := range route.cells {
+		//     	fmt.Println(i, row)
+		//     }
+		// fmt.Println("\n")
+		// for i, wall := range route.walls {
+		//     	fmt.Println(i, wall)
+		//     }
+		// fmt.Println("\n")
 
 		// get the last explored coordinate
 		r := route.r
@@ -93,21 +110,22 @@ func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
 		// stop if we found the goal
 		if r == goal_r && c == goal_c {
 
+			fmt.Println("ROUTE GEVONDEN!!!!!\\n")
 			close(routes)
 			return route, nil
 		}
 
 		if more {
 
-			richtingen := make(chan Maze)
-			go step(onceMaze, maze, richtingen)
+			// richtingen := make(chan Maze, 3)
 
-			for richting := range richtingen {
+			go step(route, routes)
 
-
-
-				routes <- richting
-			}
+			// for richting := range richtingen {
+			// 	fmt.Println("nou zeg")
+			//
+			// 	routes <- richting
+			// }
 
 		} else {
 			close(routes)
@@ -121,75 +139,131 @@ func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
 
 
 
-func step(once [][]sync.Once, maze Maze, richtingen chan Maze) {
+func copyMaze(maze Maze) (copiedMaze Maze) {
+
+	copiedMaze = maze
+	copiedMaze.cells = make([][]int, len(maze.cells))
+	for i, _ := range copiedMaze.cells {
+		copiedMaze.cells[i] = make([]int, len(maze.cells[0]))
+		copy(copiedMaze.cells[i], maze.cells[i])
+	}
+
+	return copiedMaze
+}
+
+
+func step(maze Maze, richtingen chan Maze) {
+
+
+
+	initialize.Do(func() {
+		boundsr = len(maze.walls) - 1
+		boundsc = len(maze.walls[0]) -1
+	})
+
 
 	row := maze.r
 	col := maze.c
 
-	boundsr := len(maze.walls) - 1
-	boundsc := len(maze.walls[0]) - 1
 
 
-	once[row][col].Do(func() {
-		// Add to possible direction to the channel
+	// Add to possible direction to the channel
 
-		var pos byte = byte(maze.walls[row][col])
+	var pos byte = byte(maze.walls[row][col])
+
+	// if (row > boundsr - 2) || (col > boundsc -2) {
+	// 	fmt.Println("position: ", row, ",", col, "bounds: ", boundsr, ",", boundsc)
+	// }
 
 
-		switch {
+	switch {
 
-		case pos == 48:
-			if col < boundsc && maze.cells[row][col+1] == 0 {
-				new_maze := maze
-				new_maze.cells[row][col+1] = 1
-				richtingen <- new_maze
-			}
+	case pos == 48:
+		if col < boundsc && maze.cells[row][col+1] == 0 {
+			// fmt.Println("a")
+			new_maze := copyMaze(maze)
 
-			if row < boundsr && maze.cells[row+1][col] == 0 {
-				new_maze := maze
+			new_maze.c = col + 1
+			new_maze.cells[row][col+1] = 1
+
+
+			// fmt.Println("naar rechts:\n",new_maze.cells, "\n")
+			richtingen <- new_maze
+		}
+
+		if row < boundsr {
+			if maze.cells[row+1][col] == 0 {
+				// fmt.Println("b")
+				new_maze := copyMaze(maze)
+
+				new_maze.r = row + 1
 				new_maze.cells[row+1][col] = 1
+				// fmt.Println("naar beneden:\n",new_maze.cells, "\n")
 				richtingen <- new_maze
 			}
+		}
 
-		case pos == 49:
+	case pos == 49:
 
-			if col < boundsr && maze.cells[row][col+1] == 0 {
-				new_maze := maze
+		if col < boundsc {
+			 if maze.cells[row][col+1] == 0 {
+				// fmt.Println("c")
+
+				new_maze := copyMaze(maze)
+
+				new_maze.c = col + 1
 				new_maze.cells[row][col+1] = 1
+
+				// fmt.Println("naar rechts:\n",new_maze.cells, "\n")
 				richtingen <- new_maze
+
 			}
+		}
 
-		case pos == 50:
+	case pos == 50:
 
-			if col < boundsr && maze.cells[row+1][col] == 0 {
-				new_maze := maze
+		if row < boundsr {
+			if maze.cells[row+1][col] == 0 {
+				// fmt.Println("d")
+				new_maze := copyMaze(maze)
+
+				new_maze.r = row + 1
 				new_maze.cells[row+1][col] = 1
-				richtingen <- new_maze
-			}
-
-		default:
-
-		}
-
-		if row != 0 {
-
-			if ((maze.walls[row - 1][col] == 48) || (maze.walls[row - 1][col] == 50)) && maze.cells[row-1][col] == 0 {
-				new_maze := maze
-				new_maze.cells[row-1][col] = 1
+				// fmt.Println("naar beneden:\n",new_maze.cells, "\n")
 				richtingen <- new_maze
 			}
 		}
 
-		if col != 0 {
-			if ((maze.walls[row][col - 1]) == 48 || (maze.walls[row][col - 1] == 49)) && maze.cells[row][col-1] == 0 {
-				new_maze := maze
-				new_maze.cells[row][col-1] = 1
-				richtingen <- new_maze
-			}
-		}
-	})
+	}
 
-	close(richtingen)
+	if row != 0 {
+
+		if ((maze.walls[row - 1][col] == 48) || (maze.walls[row - 1][col] == 50)) && maze.cells[row-1][col] == 0 {
+			// fmt.Println("e")
+			new_maze := copyMaze(maze)
+
+			new_maze.r = row -1
+			new_maze.cells[row-1][col] = 1
+
+			// fmt.Println("naar boven:\n",new_maze.cells, "\n")
+			richtingen <- new_maze
+		}
+	}
+
+	if col != 0 {
+		if ((maze.walls[row][col - 1]) == 48 || (maze.walls[row][col - 1] == 49)) && maze.cells[row][col-1] == 0 {
+			// fmt.Println("f")
+			new_maze := copyMaze(maze)
+
+			new_maze.c = col - 1
+			new_maze.cells[row][col-1] = 1
+			// fmt.Println("naar links:\n",new_maze.cells, "\n")
+			richtingen <- new_maze
+		}
+	}
+
+
+	// close(richtingen)
 }
 
 func main() {
@@ -226,6 +300,7 @@ func main() {
 	// 	maze[pos.Row][pos.Col] |= byte(1 << 2) // The third flag
 	// }
 
+	fmt.Println("route printen")
 	for _, row := range route.cells {
 		fmt.Println(row)
 	}
