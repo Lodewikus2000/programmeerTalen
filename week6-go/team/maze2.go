@@ -4,16 +4,19 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	// "sync"
+	"sync"
     "errors"
 )
 
-const noWall byte = (0 << 0) // The first flag
+const noWall byte = (0) // The first flag
 const southWall byte = (1 << 0) // The first flag
 const eastWall byte = (1 << 1)  // The second flag
 
-type Maze [][]byte
-
+type Maze struct {
+	walls [][]byte
+	cells [][]int
+	r,c int
+	}
 type Position struct {
 	Row, Col int
 }
@@ -30,114 +33,163 @@ func readMaze(f *os.File) (maze Maze, err error) {
 
 	s := bufio.NewScanner(f)
 
+	var rows int
+	var cols int
+	var walls [][]byte
 	for s.Scan() {
+
+		cols ++
 
         b := s.Text()
         for _, bt := range b {
+
+			rows ++
             // the possible input runes are {0, 1, 2, 3} (48-51 in Unicode)
             if bt < 48 || bt > 51 {
-                return nil, errors.New("incorrect input given, exiting.")
+                return Maze{}, errors.New("incorrect input given, exiting.")
             }
         }
-		maze = append(maze, []byte(s.Text()))
+
+		byt := []byte(b)
+		walls = append(walls, byt)
 	}
+	cells := make([][]int, rows)
+	for i := range cells {
+		cells[i] = make([]int, cols)
+	}
+	maze = Maze{walls, cells, 0, 0}
 	return maze, nil
 }
 
-func solve(maze Maze, goal Position) (route [][]int) {
+func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
 
-	fmt.Println(maze)
-
-	var rows int = len(maze)
-	var cols int = len(maze[0])
-	fmt.Println(rows)
-	fmt.Println(cols)
+	const max_path_length int = 200
+	// initialize 2D onceMaze of equivalent size as the input maze
+	var onceMaze = make([][]sync.Once, len(maze.walls) + 1)
+	for i := range onceMaze {
+    	onceMaze[i] = make([]sync.Once, len(maze.walls[0]) + 1)
+	}
 
 	// routes
-	routes := make(chan [][]int)
+	routes := make(chan Maze )
 
-	// start the exploration at {0, 0}
-	var explorestart [rows][cols]int
-	explorestart[0][0] = 1
+	maze.cells[0][0] = 1
 
-	// add the first route to the stack
-	routes <- explorestart
+	routes <- maze
 
 	for {
 
-		// gewandeld = matrix van dezelfde grootte als maze, maar met overal een 0
-	    // (dat betekent: nog niet in dit hokje geweest).
-	    // gewandeld[0,0] = 1 (dus in dit hokje zijn we wel geweest)
-	    // locatie = (0,0)
+
 
 		// Get the route to further explore
-		route := <- routes
-		fmt.Println("we zitten nu in deze route:")
+		route, more := <- routes
+
 		fmt.Println(route)
 
 		// get the last explored coordinate
-		lastexplored := route[len(route) - 1]
+		r := route.r
+		c := route.c
 
 		// stop if we found the goal
-		if lastexplored == goal {
-			return route
+		if r == goal_r && c == goal_c {
+
+			close(routes)
+			return route, nil
 		}
 
-		richtingen := make(chan Position)
-		go step(maze, lastexplored, richtingen)
+		if more {
 
-		for richting := range richtingen {
-			routes <- append(route, richting)
-	    }
+			richtingen := make(chan Maze)
+			go step(onceMaze, maze, richtingen)
+
+			for richting := range richtingen {
+
+
+
+				routes <- richting
+			}
+
+		} else {
+			close(routes)
+	        return Maze{}, errors.New("incorrect input given, exiting.")
+		}
 	}
 
-    // while de stack niet leeg is/ het kanaal open is:
-    //     current gewandeld, current_locatie = neem de bovenste item van de stack
-    //     richtingen = check_step(maze, current_locatie)
-	//
-    //     for elke richting in richtingen:
-    //         if gewandeld[richting] == 0:
-    //             nieuw_gewandeld = kopie(current_gewandeld)
-    //             nieuw_gewandeld[richting] = 1
-	//
-    //             if richting == doel_locatie (nog even vaststellen hoe):
-    //                 return nieuw_gewandeld (dit is je route)
-    //             else:
-    //                 voeg achteraan de stack toe {nieuw_gewandeld, richting
-
-    return route
+	close(routes)
+	return Maze{},  errors.New("incorrect input given, exiting.")
 }
 
-func step(maze Maze, position Position, richtingen chan Position) {
 
-	row := position.Row
-	col := position.Col
 
-	// Add to possible direction to the channel
-	switch maze[row][col] {
+func step(once [][]sync.Once, maze Maze, richtingen chan Maze) {
 
-		case noWall:
-			richtingen <- Position{row + 1, col}
-	        richtingen <- Position{row, col + 1}
+	row := maze.r
+	col := maze.c
 
-		case southWall:
-			richtingen <- Position{row, col + 1}
+	boundsr := len(maze.walls) - 1
+	boundsc := len(maze.walls[0]) - 1
 
-		case eastWall:
-			richtingen <- Position{row + 1, col}
 
-		// there are no other cases (so no default required)
-	}
+	once[row][col].Do(func() {
+		// Add to possible direction to the channel
 
-    // if maze[row - 1, col] == 0 or maze[row -1, col] == 2 {
-	// 	richtingen <- Position{row - 1, col} // we kunnen naar noord
-	// }
-    // else if maze[row, col -1] == 0 or maze[row, col - 1] == 1 {
-	// 	richtingen <- Position{row, col - 1} // we kunnen naar west
-	// }
+		var pos byte = byte(maze.walls[row][col])
+
+
+		switch {
+
+		case pos == 48:
+			if col < boundsc && maze.cells[row][col+1] == 0 {
+				new_maze := maze
+				new_maze.cells[row][col+1] = 1
+				richtingen <- new_maze
+			}
+
+			if row < boundsr && maze.cells[row+1][col] == 0 {
+				new_maze := maze
+				new_maze.cells[row+1][col] = 1
+				richtingen <- new_maze
+			}
+
+		case pos == 49:
+
+			if col < boundsr && maze.cells[row][col+1] == 0 {
+				new_maze := maze
+				new_maze.cells[row][col+1] = 1
+				richtingen <- new_maze
+			}
+
+		case pos == 50:
+
+			if col < boundsr && maze.cells[row+1][col] == 0 {
+				new_maze := maze
+				new_maze.cells[row+1][col] = 1
+				richtingen <- new_maze
+			}
+
+		default:
+
+		}
+
+		if row != 0 {
+
+			if ((maze.walls[row - 1][col] == 48) || (maze.walls[row - 1][col] == 50)) && maze.cells[row-1][col] == 0 {
+				new_maze := maze
+				new_maze.cells[row-1][col] = 1
+				richtingen <- new_maze
+			}
+		}
+
+		if col != 0 {
+			if ((maze.walls[row][col - 1]) == 48 || (maze.walls[row][col - 1] == 49)) && maze.cells[row][col-1] == 0 {
+				new_maze := maze
+				new_maze.cells[row][col-1] = 1
+				richtingen <- new_maze
+			}
+		}
+	})
 
 	close(richtingen)
-	return
 }
 
 func main() {
@@ -161,14 +213,24 @@ func main() {
 		os.Exit(3)
 	}
 
-	goal := Position {len(maze), len(maze[0])}
+	goal_r := len(maze.walls) - 1
+	goal_c := len(maze.walls[0]) - 1
+	route, maze_error := solve(maze, goal_r, goal_c)
 
-	for _, pos := range solve(maze, goal) {
-		maze[pos.Row][pos.Col] |= (1 << 2) // The third flag
+	if maze_error != nil {
+		fmt.Println(maze_error)
+		os.Exit(4)
 	}
 
-	for _, line := range maze {
-		// TODO: handle errors
+	// for _, pos := range route {
+	// 	maze[pos.Row][pos.Col] |= byte(1 << 2) // The third flag
+	// }
+
+	for _, row := range route.cells {
+		fmt.Println(row)
+	}
+
+	for _, line := range maze.walls {
 		fmt.Println(string(line))
 	}
 }
