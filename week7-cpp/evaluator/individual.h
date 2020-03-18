@@ -41,6 +41,21 @@ int associativity(char ch)
 }
 
 
+/*! Takes two chars. Returns a bool.
+    Checks wether ch1 is of greater precedence than ch2, or if
+    they have the same precedence and ch2 is left associative.
+*/
+bool is_higher_precedence(char ch1, char ch2)
+{
+    if ( precedence(ch1) > precedence(ch2) ) {
+        return true;
+    }
+    if ((precedence(ch1) == precedence(ch2)) && associativity(ch2) == 0 ) {
+        return true;
+    }
+    return false;
+}
+
 
 /*! Reads an infix expression and returns the equivalent postfix
     expression where each element is separated by a whitespace
@@ -52,7 +67,7 @@ void infix_to_postfix(istream& is,ostream& os)
     char ch;
     std::stack<char> op_stack;
 
-
+    // Keep track of wether the last processed item was an operator.
     bool saw_op = false;
 
 
@@ -72,14 +87,10 @@ void infix_to_postfix(istream& is,ostream& os)
             saw_op = true;
 
 
-            while ( (!op_stack.empty()) &&
-                        (   ( precedence(op_stack.top()) > precedence(ch) )
-                            ||
-                            (   (precedence(op_stack.top()) == precedence(ch))
-                                && associativity(ch) == 0 )
-                    )
+            while ( !op_stack.empty()
+                    && is_higher_precedence(op_stack.top(), ch)
                     && ( op_stack.top() != '(')
-                  ) {
+                ) {
 
                 char top = op_stack.top();
 

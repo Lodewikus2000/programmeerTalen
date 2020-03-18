@@ -12,8 +12,11 @@ const noWall byte = (0) // The first flag
 const southWall byte = (1 << 0) // The first flag
 const eastWall byte = (1 << 1)  // The second flag
 
-type Maze [][]byte
-
+type Maze struct {
+	walls [][]byte
+	cells [][]int
+	r,c int
+	}
 type Position struct {
 	Row, Col int
 }
@@ -30,37 +33,49 @@ func readMaze(f *os.File) (maze Maze, err error) {
 
 	s := bufio.NewScanner(f)
 
+	var rows int
+	var cols int
+	var walls [][]byte
 	for s.Scan() {
+
+		cols ++
 
         b := s.Text()
         for _, bt := range b {
+
+			rows ++
             // the possible input runes are {0, 1, 2, 3} (48-51 in Unicode)
             if bt < 48 || bt > 51 {
-                return nil, errors.New("incorrect input given, exiting.")
+                return Maze{}, errors.New("incorrect input given, exiting.")
             }
         }
 
 		byt := []byte(b)
-		maze = append(maze, byt)
+		walls = append(walls, byt)
 	}
+	cells := make([][]int, rows)
+	for i := range cells {
+		cells[i] = make([]int, cols)
+	}
+	maze = Maze{walls, cells, 0, 0}
 	return maze, nil
 }
 
-func solve(maze Maze, goal Position) (route []Position, err error) {
+func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
 
+	const max_path_length int = 200
 	// initialize 2D onceMaze of equivalent size as the input maze
-	var onceMaze = make([][]sync.Once, len(maze) + 1)
+	var onceMaze = make([][]sync.Once, len(maze.walls) + 1)
 	for i := range onceMaze {
-    	onceMaze[i] = make([]sync.Once, len(maze[0]) + 1)
+    	onceMaze[i] = make([]sync.Once, len(maze.walls[0]) + 1)
 	}
 
 	// routes
-	routes := make(chan []Position, 200)
+	routes := make(chan Maze )
 
-	startexplore := make([]Position, 0)
-	startexplore = append(startexplore, Position{0, 0})
+	maze.cells[0][0] = 1
 
-	routes <- startexplore
+	routes <- maze
 
 	for {
 
@@ -72,10 +87,11 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 		fmt.Println(route)
 
 		// get the last explored coordinate
-		lastexplored := route[len(route) - 1]
+		r := route.r
+		c := route.c
 
 		// stop if we found the goal
-		if lastexplored == goal {
+		if r == goal_r && c == goal_c {
 
 			close(routes)
 			return route, nil
@@ -83,76 +99,72 @@ func solve(maze Maze, goal Position) (route []Position, err error) {
 
 		if more {
 
-			visited := make(map[Position]bool)
-
-			for _, elem := range route {
-				visited[elem] = true
-			}
-
-			richtingen := make(chan Position)
-			go step(onceMaze, maze, lastexplored, visited, richtingen)
+			richtingen := make(chan Maze)
+			go step(onceMaze, maze, richtingen)
 
 			for richting := range richtingen {
 
-				new_route := route
-				new_route = append(new_route, richting)
 
-				routes <- new_route
+
+				routes <- richting
 			}
 
 		} else {
 			close(routes)
-	        return nil, errors.New("incorrect input given, exiting.")
+	        return Maze{}, errors.New("incorrect input given, exiting.")
 		}
 	}
 
 	close(routes)
-	return nil,  errors.New("incorrect input given, exiting.")
+	return Maze{},  errors.New("incorrect input given, exiting.")
 }
 
-func step(once [][]sync.Once, maze Maze, position Position,
-		  visited map[Position]bool, richtingen chan Position) {
 
-	row := position.Row
-	col := position.Col
 
-	boundsr := len(maze) - 1
-	boundsc := len(maze[0]) - 1
+func step(once [][]sync.Once, maze Maze, richtingen chan Maze) {
+
+	row := maze.r
+	col := maze.c
+
+	boundsr := len(maze.walls) - 1
+	boundsc := len(maze.walls[0]) - 1
 
 
 	once[row][col].Do(func() {
 		// Add to possible direction to the channel
 
-		var pos byte = byte(maze[row][col])
+		var pos byte = byte(maze.walls[row][col])
 
-
-
-		up := Position{row - 1, col}
-		left := Position{row, col - 1}
-		right := Position{row, col + 1}
-		down :=  Position{row + 1, col}
 
 		switch {
 
 		case pos == 48:
-			if col < boundsc && visited[right] == false {
-				richtingen <- right
+			if col < boundsc && maze.cells[row][col+1] == 0 {
+				new_maze := maze
+				new_maze.cells[row][col+1] = 1
+				richtingen <- new_maze
 			}
 
-			if row < boundsr && visited[down] == false {
-				richtingen <- down
+			if row < boundsr && maze.cells[row+1][col] == 0 {
+				new_maze := maze
+				new_maze.cells[row+1][col] = 1
+				richtingen <- new_maze
 			}
 
 		case pos == 49:
 
-			if col < boundsr && visited[right] == false {
-				richtingen <- right
+			if col < boundsr && maze.cells[row][col+1] == 0 {
+				new_maze := maze
+				new_maze.cells[row][col+1] = 1
+				richtingen <- new_maze
 			}
 
 		case pos == 50:
 
-			if col < boundsr && visited[down] == false {
-				richtingen <- down
+			if col < boundsr && maze.cells[row+1][col] == 0 {
+				new_maze := maze
+				new_maze.cells[row+1][col] = 1
+				richtingen <- new_maze
 			}
 
 		default:
@@ -160,14 +172,19 @@ func step(once [][]sync.Once, maze Maze, position Position,
 		}
 
 		if row != 0 {
-			if ((maze[row - 1][col] == 48) || (maze[row - 1][col] == 50)) && visited[up] == false {
-				richtingen <- up
+
+			if ((maze.walls[row - 1][col] == 48) || (maze.walls[row - 1][col] == 50)) && maze.cells[row-1][col] == 0 {
+				new_maze := maze
+				new_maze.cells[row-1][col] = 1
+				richtingen <- new_maze
 			}
 		}
 
 		if col != 0 {
-			if ((maze[row][col - 1]) == 48 || (maze[row][col - 1] == 49)) && visited[left] == false {
-				richtingen <- left
+			if ((maze.walls[row][col - 1]) == 48 || (maze.walls[row][col - 1] == 49)) && maze.cells[row][col-1] == 0 {
+				new_maze := maze
+				new_maze.cells[row][col-1] = 1
+				richtingen <- new_maze
 			}
 		}
 	})
@@ -196,19 +213,24 @@ func main() {
 		os.Exit(3)
 	}
 
-	goal := Position {len(maze) - 1, len(maze[0]) - 1}
-	route, maze_error := solve(maze, goal)
+	goal_r := len(maze.walls) - 1
+	goal_c := len(maze.walls[0]) - 1
+	route, maze_error := solve(maze, goal_r, goal_c)
 
 	if maze_error != nil {
 		fmt.Println(maze_error)
 		os.Exit(4)
 	}
 
-	for _, pos := range route {
-		maze[pos.Row][pos.Col] |= byte(1 << 2) // The third flag
+	// for _, pos := range route {
+	// 	maze[pos.Row][pos.Col] |= byte(1 << 2) // The third flag
+	// }
+
+	for _, row := range route.cells {
+		fmt.Println(row)
 	}
 
-	for _, line := range maze {
+	for _, line := range maze.walls {
 		fmt.Println(string(line))
 	}
 }
