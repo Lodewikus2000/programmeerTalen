@@ -56,7 +56,7 @@ class Evaluator
         file>>result;
         return result;
     }
- 
+
  private:
     /*! Returns a filename to store intermediate results in. Parameter 'i'
       is used to make the filename unique.
@@ -93,7 +93,7 @@ class Evaluator
         file>>argument;
         return argument;
     }
- 
+
     /*! Evalutates an expression with operator 'my_operator' and pops the
       associated number of arguments from the 'elements' stack.  The result
       of the expression is returned.
