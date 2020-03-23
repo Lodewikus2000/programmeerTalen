@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
+
 
 #include "evaluator_exception.h"
 #include "evaluator_string_tools.h"
@@ -19,7 +21,7 @@ class Matrix
 
           std::vector<double>& vec()       { return m_data;}
     const std::vector<double>& vec() const { return m_data;}
-    
+
     int nr_rows() const                         { return m_rows;}
     int nr_cols() const                         { return m_cols;}
           double& operator()(int r,int c)       { return m_data[r*m_cols+c];}
@@ -31,6 +33,36 @@ class Matrix
 /*! Reads a Matrix from 'is' stream. */
 std::istream& operator>>(std::istream& is,Matrix& matrix)
 {
+
+    int rows = 0;
+    float fl;
+
+
+    std::vector<double> data;
+
+
+    while (is.peek() != EOF) {
+        if (is.peek() == '\n'){
+            rows ++;
+            is.get();
+        }
+        if (is.peek() == ',') {
+            is.get();
+        }
+        if (is >> fl){
+            // std::cout << fl <<"--";
+            data.push_back(fl);
+        }
+
+    }
+    // std::cout << "--"<< rows <<" rows\n";
+
+    int cols = data.size() / 3;
+
+    matrix.m_rows = rows;
+    matrix.m_cols = cols;
+    matrix.m_data = data;
+
     return is; // to be completed
 }
 
