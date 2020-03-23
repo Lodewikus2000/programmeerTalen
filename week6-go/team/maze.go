@@ -12,8 +12,11 @@ const noWall byte = (0) // The first flag
 const southWall byte = (1 << 0) // The first flag
 const eastWall byte = (1 << 1)  // The second flag
 
-type Maze [][]byte
-
+type Maze struct {
+	walls [][]byte
+	cells [][]int
+	r,c int
+	}
 type Position struct {
 	Row, Col int
 }
@@ -30,28 +33,45 @@ func readMaze(f *os.File) (maze Maze, err error) {
 
 	s := bufio.NewScanner(f)
 
+	var rows int
+	var cols int
+	var walls [][]byte
 	for s.Scan() {
+
+		cols ++
 
         b := s.Text()
         for _, bt := range b {
+
+			rows ++
             // the possible input runes are {0, 1, 2, 3} (48-51 in Unicode)
             if bt < 48 || bt > 51 {
-                return nil, errors.New("incorrect input given, exiting.")
+                return Maze{}, errors.New("incorrect input given, exiting.")
             }
         }
 
 		byt := []byte(b)
-		maze = append(maze, byt)
+		walls = append(walls, byt)
 	}
+	cells := make([][]int, rows)
+	for i := range cells {
+		cells[i] = make([]int, cols)
+	}
+	maze = Maze{walls, cells, 0, 0}
 	return maze, nil
 }
 
+<<<<<<< HEAD
 func solve(maze Maze, goal Position) (route []Position) {
+=======
+func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
+>>>>>>> 88bef0f058a7049d2ef3a68c85dd082c1ce73222
 
+	const max_path_length int = 200
 	// initialize 2D onceMaze of equivalent size as the input maze
-	var onceMaze = make([][]sync.Once, len(maze) + 1)
+	var onceMaze = make([][]sync.Once, len(maze.walls) + 1)
 	for i := range onceMaze {
-    	onceMaze[i] = make([]sync.Once, len(maze[0]) + 1)
+    	onceMaze[i] = make([]sync.Once, len(maze.walls[0]) + 1)
 	}
 
 	// make a channel to save routes
@@ -236,7 +256,7 @@ func main() {
 		maze[pos.Row][pos.Col] |= (1 << 2) // The third flag
 	}
 
-	for _, line := range maze {
+	for _, line := range maze.walls {
 		fmt.Println(string(line))
 	}
 }
