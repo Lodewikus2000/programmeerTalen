@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <iostream>
-#include <string>
+
 
 
 #include "evaluator_exception.h"
@@ -34,23 +34,33 @@ class Matrix
 std::istream& operator>>(std::istream& is,Matrix& matrix)
 {
     int rows = 0;
-    float fl;
+
 
     std::vector<double> data;
 
-    while (is.peek() != EOF) {
-        if (is.peek() == '\n'){
-            rows ++;
-            is.get();
+    std::vector<std::string> tokens;
+    std::string line;
+
+    std::string token;
+    while (std::getline(is, line))
+    {
+        rows ++;
+
+        std::stringstream ss(line);
+        while (std::getline(ss, token, ',')) {
+            trim(token);
+            tokens.push_back(token);
         }
-        if (is.peek() == ',') {
-            is.get();
-        }
-        if (is >> fl){
-            // std::cout << fl <<"--";
-            data.push_back(fl);
-        }
+
     }
+
+    for (int i = 0; i < tokens.size(); i++) {
+        std::istringstream ss(tokens[i]);
+        float dingetje;
+        ss >> dingetje;
+        data.push_back(dingetje);
+    }
+
     // std::cout << "--"<< rows <<" rows\n";
 
     int cols = data.size() / rows;
@@ -70,8 +80,6 @@ std::ostream& operator<<(std::ostream& os,const Matrix& matrix)
     int cols = matrix.nr_cols();
 
 
-
-    os << "\n";
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             os << matrix(i, j);
@@ -172,7 +180,13 @@ Matrix operator*(const Matrix& m1,const Matrix& m2)
 {
     int m = m1.nr_rows();
     int n = m1.nr_cols();
+    int n2 = m2.nr_rows();
     int p = m2.nr_cols();
+
+
+    if (n != n2) {
+        throw Evaluator_exception("Invalid dimensions in matrix multiplication");
+    }
 
     std::vector<double> new_data;
 

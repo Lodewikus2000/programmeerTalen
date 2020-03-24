@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <iostream>
-#include <string>
+
 #include <sstream>
 
 #include "evaluator_exception.h"
@@ -36,7 +36,7 @@ template<typename T>
 std::istream& operator>>(std::istream& is,MatrixT<T>& matrix)
 {
     int rows = 0;
-    T item;
+
 
     std::vector<T> data;
 
@@ -86,15 +86,12 @@ std::ostream& operator<<(std::ostream& os,const MatrixT<T>& matrix)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             os << matrix(i, j);
-
             if (j < cols - 1) {
-
                 os << ',';
             }
         }
         if (i < rows - 1) {
-
-            os << '\n';
+            os << "\n";
         }
     }
 
@@ -201,7 +198,13 @@ MatrixT<T> operator*(const MatrixT<T>& m1,const MatrixT<T>& m2)
 {
     int m = m1.nr_rows();
     int n = m1.nr_cols();
+    int n2 = m2.nr_rows();
     int p = m2.nr_cols();
+
+    if (n != n2) {
+        throw Evaluator_exception("Invalid dimensions in matrix multiplication");
+    }
+
 
     std::vector<T> new_data;
 
