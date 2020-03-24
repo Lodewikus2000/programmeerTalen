@@ -28,8 +28,8 @@ int main()
         cout<<"matrix-matrix:\n"<< matrix-matrix <<'\n';
 
         cout<<"matrix*transpose(matrix):\n"<< matrix*transpose(matrix) <<'\n';
-        
-    } 
+
+    }
     catch(std::exception& e)
     {
         std::cerr<<"exception caught: "<<e.what()<<'\n';

@@ -65,8 +65,11 @@ std::istream& operator>>(std::istream& is,Matrix& matrix)
 /*! Writes Matrix 'matrix' to 'os' stream. */
 std::ostream& operator<<(std::ostream& os,const Matrix& matrix)
 {
+
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
+
+    
 
     os << "\n";
     for (int i = 0; i < rows; i++) {
