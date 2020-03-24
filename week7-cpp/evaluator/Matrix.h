@@ -92,7 +92,8 @@ Matrix operator-(const Matrix& matrix)
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
 
-    data = matrix.vec();
+    std::vector<double> new_data;
+
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -100,6 +101,7 @@ Matrix operator-(const Matrix& matrix)
         }
     }
 
+    // new_data = matrix.vec();
     // const std::vector <double> data = matrix.vec();
     //
     // std::vector <double> new_data;
