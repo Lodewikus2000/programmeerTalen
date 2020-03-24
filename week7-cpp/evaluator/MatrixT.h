@@ -194,7 +194,7 @@ MatrixT<T> operator*(const MatrixT<T>& m1,const MatrixT<T>& m2)
 
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
-            int sum = 0;
+            T sum = 0;
             for (int r = 0; r < n; r++) {
                 sum += m1(i, r) * m2(r, j);
             }
