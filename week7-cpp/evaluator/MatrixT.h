@@ -78,18 +78,22 @@ std::istream& operator>>(std::istream& is,MatrixT<T>& matrix)
 template<typename T>
 std::ostream& operator<<(std::ostream& os,const MatrixT<T>& matrix)
 {
+
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
 
-    os << "\n";
+
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             os << matrix(i, j);
+
             if (j < cols - 1) {
+
                 os << ',';
             }
         }
         if (i < rows - 1) {
+
             os << '\n';
         }
     }
@@ -109,7 +113,7 @@ MatrixT<T> operator-(const MatrixT<T>& matrix)
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            new_data.push_back(-matrix(i, j));
+            new_data.push_back(-1 * matrix(i, j));
         }
     }
     MatrixT<T> new_matrix(rows, cols);
@@ -124,6 +128,9 @@ MatrixT<T> transpose(const MatrixT<T>& matrix)
 {
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
+    // std::cout << "rows: " << rows << "\n";
+    // std::cout << "cols: " << cols << "\n";
+
 
     std::vector<T> new_data;
 
@@ -135,6 +142,13 @@ MatrixT<T> transpose(const MatrixT<T>& matrix)
     }
     MatrixT<T> new_matrix(cols, rows);
     new_matrix.vec() = new_data;
+
+    // for (int j = 0; j < new_data.size(); j++) {
+    //     std::cout <<"\n" << new_data[j] << "\n";
+    // }
+    //
+    // std::cout << "rows: " << new_matrix.nr_rows() << "\n";
+    // std::cout << "cols: " << new_matrix.nr_cols() << "\n";
 
     return new_matrix;
 }
@@ -194,7 +208,7 @@ MatrixT<T> operator*(const MatrixT<T>& m1,const MatrixT<T>& m2)
 
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
-            int sum = 0;
+            T sum = 0;
             for (int r = 0; r < n; r++) {
                 sum += m1(i, r) * m2(r, j);
             }

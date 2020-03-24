@@ -190,7 +190,7 @@ Matrix operator*(const Matrix& m1,const Matrix& m2)
 
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
-            int sum = 0;
+            float sum = 0;
             for (int r = 0; r < n; r++) {
                 sum += m1(i, r) * m2(r, j);
             }
