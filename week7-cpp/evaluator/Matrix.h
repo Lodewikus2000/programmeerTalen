@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include <string>
 
 
@@ -69,8 +70,6 @@ std::ostream& operator<<(std::ostream& os,const Matrix& matrix)
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
 
-    
-
     os << "\n";
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -93,14 +92,24 @@ Matrix operator-(const Matrix& matrix)
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
 
-    std::vector<double> new_data;
-
+    data = matrix.vec();
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             new_data.push_back(-matrix(i, j));
         }
     }
+
+    // const std::vector <double> data = matrix.vec();
+    //
+    // std::vector <double> new_data;
+    // new_data.reserve(data.size());
+    // copy(data.begin(), data.end(), back_inserter(new_data));
+    //
+    // auto negate = [](double n){n *= -1;};
+    //
+    // std::for_each(new_data.begin(), new_data.end(), negate);
+    //
     Matrix new_matrix(rows, cols);
     new_matrix.vec() = new_data;
 
