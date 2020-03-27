@@ -61,7 +61,11 @@ func readMaze(f *os.File) (maze Maze, err error) {
 	return maze, nil
 }
 
+<<<<<<< HEAD
+func solve(maze Maze, goal Position) (route []Position) {
+=======
 func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
+>>>>>>> 88bef0f058a7049d2ef3a68c85dd082c1ce73222
 
 	const max_path_length int = 200
 	// initialize 2D onceMaze of equivalent size as the input maze
@@ -70,126 +74,153 @@ func solve(maze Maze, goal_r int, goal_c int) (route Maze, err error) {
     	onceMaze[i] = make([]sync.Once, len(maze.walls[0]) + 1)
 	}
 
-	// routes
-	routes := make(chan Maze )
+	// make a channel to save routes
+	routes := make(chan []Position)
 
-	maze.cells[0][0] = 1
+	// Acknowledgement channel
+	ack := make(chan bool)
 
-	routes <- maze
+	// Done channel
+	done := make(chan bool)
 
+	boundsr := len(maze) - 1
+	boundsc := len(maze[0]) - 1
+
+	go start_exploration(routes)
+
+	// count := 1
+	//
+	// for count != 0 {
+	//
+	// 	// fmt.Println(count)
+	//
+	// 	select {
+	//
+	//
+	// 	case <-done:
+	// 		// delete last element
+	// 		count -= 1
+	// 		route = route[:len(route) - 1]
+	//
+	// 	case route := <-routes:
+	//
+	// 		fmt.Println(route)
+	//
+	// 		last := route[len(route) - 1]
+	//
+	// 		if last == goal {
+	// 			return route
+	// 		}
+	//
+	// 		row := last.Row
+	// 		col := last.Col
+	//
+	//
+
+	// go onceMaze[row][col].Do(func() {
 	for {
+		go func() {
 
+			route := <-routes
 
+			fmt.Println(route)
 
-		// Get the route to further explore
-		route, more := <- routes
+			last := route[len(route) - 1]
 
-		fmt.Println(route)
+			row := last.Row
+			col := last.Col
 
-		// get the last explored coordinate
-		r := route.r
-		c := route.c
+			// Add to possible direction to the channel
 
-		// stop if we found the goal
-		if r == goal_r && c == goal_c {
+			var pos byte = byte(maze[row][col])
 
-			close(routes)
-			return route, nil
-		}
+			up := append(route, Position{row - 1, col})
+			left := append(route, Position{row, col - 1})
+			right := append(route, Position{row, col + 1})
+			down := append(route, Position{row + 1, col})
 
-		if more {
+			switch {
 
-			richtingen := make(chan Maze)
-			go step(onceMaze, maze, richtingen)
+			case pos == 48:
+				if col < boundsc {
+					routes <- up
+					ack <- true
+				}
 
-			for richting := range richtingen {
+				if row < boundsr {
+					routes <- down
+					ack <- true
+				}
 
+			case pos == 49:
 
+				if col < boundsc {
+					routes <- right
+					ack <- true
+				}
 
-				routes <- richting
+			case pos == 50:
+
+				if col < boundsr {
+					routes <- down
+					ack <- true
+				}
+
+			default:
+
+			if row != 0 {
+				if ((maze[row - 1][col] == 48) ||
+					(maze[row - 1][col] == 50)) {
+
+					routes <- up
+					ack <- true
+				}
 			}
 
-		} else {
-			close(routes)
-	        return Maze{}, errors.New("incorrect input given, exiting.")
-		}
-	}
+			if col != 0 {
+				if ((maze[row][col - 1]) == 48 ||
+					(maze[row][col - 1] == 49)) {
 
-	close(routes)
-	return Maze{},  errors.New("incorrect input given, exiting.")
+					routes <-  left
+					ack <- true
+				}
+			}
+			}
+
+			done <- true
+		}()
+
+		fmt.Println(<-routes)
+		fmt.Println(<-ack)
+		fmt.Println(<-done)
+	}
+	// 		count++
+	//
+	// 		if ! <- ack {
+	//
+	// 		} else {
+	//
+	// 			close(ack)
+	// 			close(done)
+	// 			close(routes)
+	// 			return nil
+	// 		}
+	//
+	// 	}
+	// }
+
+
+	return route
 }
 
+func start_exploration(routes chan []Position){
+	startexplore := make([]Position, 0)
+	startexplore = append(startexplore, Position{0, 0})
 
+	fmt.Printf("%T\n", routes)
+	fmt.Printf("%T\n", startexplore)
 
-func step(once [][]sync.Once, maze Maze, richtingen chan Maze) {
-
-	row := maze.r
-	col := maze.c
-
-	boundsr := len(maze.walls) - 1
-	boundsc := len(maze.walls[0]) - 1
-
-
-	once[row][col].Do(func() {
-		// Add to possible direction to the channel
-
-		var pos byte = byte(maze.walls[row][col])
-
-
-		switch {
-
-		case pos == 48:
-			if col < boundsc && maze.cells[row][col+1] == 0 {
-				new_maze := maze
-				new_maze.cells[row][col+1] = 1
-				richtingen <- new_maze
-			}
-
-			if row < boundsr && maze.cells[row+1][col] == 0 {
-				new_maze := maze
-				new_maze.cells[row+1][col] = 1
-				richtingen <- new_maze
-			}
-
-		case pos == 49:
-
-			if col < boundsr && maze.cells[row][col+1] == 0 {
-				new_maze := maze
-				new_maze.cells[row][col+1] = 1
-				richtingen <- new_maze
-			}
-
-		case pos == 50:
-
-			if col < boundsr && maze.cells[row+1][col] == 0 {
-				new_maze := maze
-				new_maze.cells[row+1][col] = 1
-				richtingen <- new_maze
-			}
-
-		default:
-
-		}
-
-		if row != 0 {
-
-			if ((maze.walls[row - 1][col] == 48) || (maze.walls[row - 1][col] == 50)) && maze.cells[row-1][col] == 0 {
-				new_maze := maze
-				new_maze.cells[row-1][col] = 1
-				richtingen <- new_maze
-			}
-		}
-
-		if col != 0 {
-			if ((maze.walls[row][col - 1]) == 48 || (maze.walls[row][col - 1] == 49)) && maze.cells[row][col-1] == 0 {
-				new_maze := maze
-				new_maze.cells[row][col-1] = 1
-				richtingen <- new_maze
-			}
-		}
-	})
-
-	close(richtingen)
+	routes <- startexplore
 }
 
 func main() {
@@ -213,21 +244,16 @@ func main() {
 		os.Exit(3)
 	}
 
-	goal_r := len(maze.walls) - 1
-	goal_c := len(maze.walls[0]) - 1
-	route, maze_error := solve(maze, goal_r, goal_c)
-
-	if maze_error != nil {
-		fmt.Println(maze_error)
-		os.Exit(4)
-	}
-
-	// for _, pos := range route {
-	// 	maze[pos.Row][pos.Col] |= byte(1 << 2) // The third flag
+	goal := Position {len(maze) - 1, len(maze[0]) - 1}
+	// route, maze_error := solve(maze, goal)
+	//
+	// if maze_error != nil {
+	// 	fmt.Println(maze_error)
+	// 	os.Exit(4)
 	// }
 
-	for _, row := range route.cells {
-		fmt.Println(row)
+	for _, pos := range solve(maze, goal) {
+		maze[pos.Row][pos.Col] |= (1 << 2) // The third flag
 	}
 
 	for _, line := range maze.walls {
