@@ -9,7 +9,7 @@ int main()
 {
     try
     {
-        Evaluator<MatrixT<int>,0> evaluator;
+        Evaluator<Str,0> evaluator;
         std::cout<<evaluator.evaluate(std::cin)<<'\n';
     }
     catch(std::exception& e)
