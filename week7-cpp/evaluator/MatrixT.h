@@ -1,3 +1,7 @@
+/* Pim van Helvoirt
+ * Leo Schreuders
+ */
+
 #ifndef MATRIXT_INCLUDED
 #define MATRIXT_INCLUDED
 
@@ -56,7 +60,7 @@ std::istream& operator>>(std::istream& is,MatrixT<T>& matrix)
 
     }
 
-    for (int i = 0; i < tokens.size(); i++) {
+    for (int i = 0; i < (int) tokens.size(); i++) {
         std::istringstream ss(tokens[i]);
         T dingetje;
         ss >> dingetje;
