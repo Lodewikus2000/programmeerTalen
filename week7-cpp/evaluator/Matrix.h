@@ -83,12 +83,7 @@ std::ostream& operator<<(std::ostream& os,const Matrix& matrix)
 
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
-
-<<<<<<< HEAD
-
-=======
-    os << "\n";
->>>>>>> e1d9186932a9f43155914fe77c3af67fe8607130
+    
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             os << matrix(i, j);
