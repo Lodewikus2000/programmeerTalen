@@ -2,6 +2,8 @@
  * Leo Schreuders
  */
 
+#ifndef STR_INCLUDED
+#define STR_INCLUDED
 
 #include <string>
 #include <sstream>
@@ -23,7 +25,8 @@ public:
     std::string get_string() const                     { return m_str;}
     void set_string(std::string string) {m_str = string;}
 
-    friend std::istream& operator>>(std::istream& is,Str& string); // give operator access to private variables
+    // give operator access to private variables
+    friend std::istream& operator>>(std::istream& is,Str& string);
 
 };
 
@@ -72,7 +75,8 @@ Str transpose(const Str& string)
 /*! Returns a new Matrix that is equal to 'm1+m2'. */
 Str operator+(const Str& string1,const Str& string2)
 {
-    std::string new_string = "(" + string1.get_string() + "+" + string2.get_string() + ")";
+    std::string new_string = ("(" + string1.get_string() + "+" +
+                              string2.get_string() + ")");
 
     Str new_str(new_string);
 
@@ -83,7 +87,8 @@ Str operator+(const Str& string1,const Str& string2)
 
 Str operator-(const Str& string1,const Str& string2)
 {
-  std::string new_string = "(" + string1.get_string() + "-" + string2.get_string() + ")";
+  std::string new_string = ("(" + string1.get_string() + "-" +
+                            string2.get_string() + ")");
 
   Str new_str(new_string);
 
@@ -93,9 +98,11 @@ Str operator-(const Str& string1,const Str& string2)
 /*! Returns a new Matrix that is equal to 'm1*m2'. */
 Str operator*(const Str& string1,const Str& string2)
 {
-    std::string new_string = "(" + string1.get_string() + "*" + string2.get_string() + ")";
+    std::string new_string = ("(" + string1.get_string() + "*" +
+                              string2.get_string() + ")");
 
     Str new_str(new_string);
 
     return new_str;
 }
+#endif

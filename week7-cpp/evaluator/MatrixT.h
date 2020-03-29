@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <sstream>
 
+#include "Str.h"
+
 #include "evaluator_exception.h"
 #include "evaluator_string_tools.h"
 
@@ -32,7 +34,9 @@ class MatrixT
           T& operator()(int r,int c)        { return m_data[r*m_cols+c];}
     const T& operator()(int r,int c) const  { return m_data[r*m_cols+c];}
 
-    template<typename T2> friend std::istream& operator>>(std::istream& is,MatrixT<T2>& matrix); // give operator access to private variables
+    // give operator access to private variables
+    template<typename T2> friend std::istream& operator>>(std::istream& is,
+                                                          MatrixT<T2>& matrix);
 };
 
 /*! Reads a Matrix from 'is' stream. */
@@ -48,9 +52,11 @@ std::istream& operator>>(std::istream& is,MatrixT<T>& matrix)
     std::string line;
 
     std::string token;
+
+    // Tokenize the input stream
     while (std::getline(is, line))
     {
-        rows ++;
+        rows++;
 
         std::stringstream ss(line);
         while (std::getline(ss, token, ',')) {
@@ -62,9 +68,9 @@ std::istream& operator>>(std::istream& is,MatrixT<T>& matrix)
 
     for (size_t i = 0; i < tokens.size(); i++) {
         std::istringstream ss(tokens[i]);
-        T dingetje;
-        ss >> dingetje;
-        data.push_back(dingetje);
+        T element;
+        ss >> element;
+        data.push_back(element);
     }
 
     // std::cout << "--"<< rows <<" rows\n";
@@ -85,7 +91,6 @@ std::ostream& operator<<(std::ostream& os,const MatrixT<T>& matrix)
 
     int rows = matrix.nr_rows();
     int cols = matrix.nr_cols();
-
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -215,7 +220,8 @@ MatrixT<T> operator*(const MatrixT<T>& m1,const MatrixT<T>& m2)
     int p = m2.nr_cols();
 
     if (n != n2) {
-        throw Evaluator_exception("Invalid dimensions in matrix multiplication");
+        throw Evaluator_exception("Invalid dimensions"
+                                  " in matrix multiplication");
     }
 
 
