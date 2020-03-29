@@ -1,3 +1,7 @@
+/* Pim van Helvoirt
+ * Leo Schreuders
+ */
+
 #ifndef MATRIXT_INCLUDED
 #define MATRIXT_INCLUDED
 
@@ -109,7 +113,7 @@ MatrixT<T> operator-(const MatrixT<T>& matrix)
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            new_data.push_back(-1 * matrix(i, j));
+            new_data.push_back(-matrix(i, j));
         }
     }
 
@@ -217,12 +221,12 @@ MatrixT<T> operator*(const MatrixT<T>& m1,const MatrixT<T>& m2)
 
     std::vector<T> new_data;
 
-
+    T sum{};
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
-            T sum = 0;
+            sum = T();
             for (int r = 0; r < n; r++) {
-                sum += m1(i, r) * m2(r, j);
+                sum = sum + m1(i, r) * m2(r, j);
             }
             new_data.push_back(sum);
         }
