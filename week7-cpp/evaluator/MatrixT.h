@@ -158,12 +158,6 @@ MatrixT<T> transpose(const MatrixT<T>& matrix)
     MatrixT<T> new_matrix(cols, rows);
     new_matrix.vec() = new_data;
 
-    // for (int j = 0; j < new_data.size(); j++) {
-    //     std::cout <<"\n" << new_data[j] << "\n";
-    // }
-    //
-    // std::cout << "rows: " << new_matrix.nr_rows() << "\n";
-    // std::cout << "cols: " << new_matrix.nr_cols() << "\n";
 
     return new_matrix;
 }
@@ -230,9 +224,9 @@ MatrixT<T> operator*(const MatrixT<T>& m1,const MatrixT<T>& m2)
     T sum{};
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < p; j++) {
-            sum = T();
-            for (int r = 0; r < n; r++) {
-                sum = sum + m1(i, r) * m2(r, j);
+            sum = T(m1(i, 0) * m2(0, j));
+            for (int r = 1; r < n; r++) {
+                sum = sum + T(m1(i, r) * m2(r, j));
             }
             new_data.push_back(sum);
         }
