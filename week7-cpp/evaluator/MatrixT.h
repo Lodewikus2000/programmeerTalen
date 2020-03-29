@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <iostream>
-
+#include <algorithm>
 #include <sstream>
 
 #include "evaluator_exception.h"
@@ -56,7 +56,7 @@ std::istream& operator>>(std::istream& is,MatrixT<T>& matrix)
 
     }
 
-    for (int i = 0; i < tokens.size(); i++) {
+    for (size_t i = 0; i < tokens.size(); i++) {
         std::istringstream ss(tokens[i]);
         T dingetje;
         ss >> dingetje;
@@ -107,14 +107,23 @@ MatrixT<T> operator-(const MatrixT<T>& matrix)
 
     std::vector<T> new_data;
 
-
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             new_data.push_back(-1 * matrix(i, j));
         }
     }
+
     MatrixT<T> new_matrix(rows, cols);
     new_matrix.vec() = new_data;
+
+    // MatrixT<T> new_matrix(rows, cols);
+    // new_matrix.vec() = matrix.vec();
+    //
+    // std::vector<T> data = new_matrix.vec();
+    //
+    // auto negate = [](double n){n *= -1.0;};
+    //
+    // std::for_each(data.begin(), data.end(), negate);
 
     return new_matrix;
 }
