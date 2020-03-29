@@ -63,7 +63,7 @@ Str operator-(const Str& string)
     return new_str;
 }
 
-/*! Returns a new Matrix that is the transpose of 'matrix'. */
+/*! Returns a new Str that is the transpose of 'string'. */
 Str transpose(const Str& string)
 {
 
@@ -72,34 +72,34 @@ Str transpose(const Str& string)
     return new_str;
 }
 
-/*! Returns a new Matrix that is equal to 'm1+m2'. */
+/*! Returns a new String that is equal to 'string1+string2'. */
 Str operator+(const Str& string1,const Str& string2)
 {
-    std::string new_string = ("(" + string1.get_string() + "+" +
-                              string2.get_string() + ")");
+    std::string new_string = "(" + string1.get_string() + "+" +
+                              string2.get_string() + ")";
 
     Str new_str(new_string);
 
     return new_str;
 }
 
-/*! Returns a new Matrix that is equal to 'm1-m2'. */
+/*! Returns a new String that is equal to 'string1-string2'. */
 
 Str operator-(const Str& string1,const Str& string2)
 {
-  std::string new_string = ("(" + string1.get_string() + "-" +
-                            string2.get_string() + ")");
+  std::string new_string = "(" + string1.get_string() + "-" +
+                            string2.get_string() + ")";
 
   Str new_str(new_string);
 
   return new_str;
 }
 
-/*! Returns a new Matrix that is equal to 'm1*m2'. */
+/*! Returns a new String that is equal to 'string1*string2'. */
 Str operator*(const Str& string1,const Str& string2)
 {
-    std::string new_string = ("(" + string1.get_string() + "*" +
-                              string2.get_string() + ")");
+    std::string new_string = "(" + string1.get_string() + "*" +
+                              string2.get_string() + ")";
 
     Str new_str(new_string);
 
